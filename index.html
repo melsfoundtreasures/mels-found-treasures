@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>Mel's Found Treasures | Reseller Command Center</title>
+<meta name="description" content="Your private inventory, sales and profit workspace.">
+<meta name="robots" content="noindex,nofollow">
+  <style>
+@media(min-width:1100px){.shell{max-width:1440px;padding-top:30px}.topbar{padding-left:max(32px,calc((100vw - 1440px)/2));padding-right:max(32px,calc((100vw - 1440px)/2))}.inventory-list{grid-template-columns:repeat(2,minmax(0,1fr))}.item-main,.sale-card>div{min-width:0}.item-main h3{overflow-wrap:anywhere}.modal{width:min(1000px,94vw)}}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+:root{--bg:#0b1020;--panel:#111827;--panel2:#182235;--text:#f8fafc;--muted:#94a3b8;--line:#273449;--accent:#22c55e;--accent2:#16a34a;--warn:#f59e0b;--danger:#ef4444;--blue:#60a5fa;--shadow:0 18px 50px rgba(0,0,0,.24)}
+*{box-sizing:border-box}html{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{margin:0;background:linear-gradient(180deg,#0b1020 0,#0e1628 34%,#0b1020 100%);min-height:100vh}.topbar{padding:28px max(18px,calc((100vw - 1280px)/2));display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);background:rgba(8,13,26,.86);backdrop-filter:blur(14px);position:sticky;top:0;z-index:5}.eyebrow{font-size:.72rem;letter-spacing:.15em;font-weight:800;color:var(--accent);margin-bottom:6px}.topbar h1{margin:0;font-size:clamp(1.55rem,3.5vw,2.35rem)}.sub,.muted{color:var(--muted)}.sub{margin:.35rem 0 0;max-width:680px}.shell{max-width:1280px;margin:0 auto;padding:22px 18px 80px}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}.kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}.kpi .label{font-size:.8rem;color:var(--muted);margin-bottom:8px}.kpi .value{font-size:1.65rem;font-weight:800}.kpi .mini{font-size:.76rem;color:var(--muted);margin-top:5px}.action-row{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.primary,.secondary,.ghost,.danger{border:0;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:#052e16}.primary:hover{background:#34d399}.secondary{background:#1d293d;color:var(--text);border:1px solid #334155}.ghost{background:transparent;color:var(--text);border:1px solid #334155}.danger{color:#fecaca;border-color:#7f1d1d}.file-label{display:inline-flex;align-items:center}.panel-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}.panel{background:rgba(17,24,39,.94);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel-head h2{font-size:1.1rem;margin:0}.wrap{align-items:flex-start;flex-wrap:wrap}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.search,select,input,textarea{width:100%;background:#0d1526;color:var(--text);border:1px solid #344259;border-radius:10px;padding:10px 11px;font:inherit}select{cursor:pointer}.toolbar .search{width:min(320px,60vw)}.toolbar select{width:auto}.health-bars{display:grid;gap:11px}.health-row{display:grid;grid-template-columns:120px 1fr 60px;gap:10px;align-items:center;font-size:.86rem}.bar{height:10px;border-radius:999px;background:#0b1220;overflow:hidden}.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#86efac)}.chips{display:flex;gap:8px;flex-wrap:wrap}.chip{padding:8px 11px;border-radius:999px;background:#0d1526;border:1px solid #344259;color:var(--text);cursor:pointer;font-size:.84rem}.chip.active{background:#193225;border-color:#2b6d43;color:#bbf7d0}.inventory-list,.sales-list{display:grid;gap:10px}.item-card,.sale-card{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid #2b384d;border-radius:14px;background:#0d1526;cursor:pointer}.item-card:hover{border-color:#475569}.thumb{width:64px;height:64px;border-radius:10px;background:#172033;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#64748b;font-size:.72rem;text-align:center}.thumb img{width:100%;height:100%;object-fit:cover}.item-main h3,.sale-card h3{margin:0 0 5px;font-size:.95rem}.meta{color:var(--muted);font-size:.77rem;display:flex;gap:8px;flex-wrap:wrap}.badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:.69rem;font-weight:700}.badge.listed{background:#12305a;color:#bfdbfe}.badge.unlisted{background:#3a2a08;color:#fde68a}.badge.sold{background:#123921;color:#bbf7d0}.item-side{text-align:right}.price{font-weight:800}.profit{font-size:.78rem;color:#86efac}.loss{font-size:.78rem;color:#fca5a5}.empty-state{text-align:center;padding:36px 12px;color:var(--muted)}.empty-state h3{color:var(--text);margin-bottom:6px}.empty-icon{font-size:2.2rem}.modal{width:min(920px,94vw);max-height:90vh;overflow:auto;background:#111827;color:var(--text);border:1px solid #334155;border-radius:18px;padding:0;box-shadow:0 30px 90px rgba(0,0,0,.6)}.modal::backdrop{background:rgba(2,6,23,.8);backdrop-filter:blur(4px)}.modal form{padding:20px}.modal.small{width:min(600px,94vw)}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}.modal-head h2{margin:0}.icon-btn{border:0;background:#1e293b;color:white;width:38px;height:38px;border-radius:10px;cursor:pointer}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.form-grid.two{grid-template-columns:repeat(2,1fr)}label{display:grid;gap:6px;font-size:.8rem;color:#cbd5e1}textarea{resize:vertical}.modal-actions{display:flex;align-items:center;gap:10px;margin-top:18px}.grow{flex:1}.photo-section{margin-bottom:16px;padding:14px;background:#0d1526;border:1px solid #2b384d;border-radius:14px}.photo-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}.photo-help{font-size:.75rem;margin-top:4px}.photo-count{font-size:.75rem;color:#94a3b8;white-space:nowrap}.photo-preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:9px;min-height:92px}.photo-tile{position:relative;aspect-ratio:1/1;border-radius:11px;overflow:hidden;background:#172033;border:1px solid #334155}.photo-tile img{width:100%;height:100%;object-fit:cover;display:block}.photo-remove{position:absolute;right:5px;top:5px;width:28px;height:28px;border:0;border-radius:999px;background:rgba(2,6,23,.82);color:#fff;font-size:18px;line-height:1;cursor:pointer}.photo-empty{grid-column:1/-1;min-height:92px;border:1px dashed #475569;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.8rem}.photo-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}.photo-actions .file-label{cursor:pointer}.wide{width:100%}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);background:#f8fafc;color:#0f172a;padding:10px 14px;border-radius:999px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:20}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.drive-status{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 9px;border:1px solid #334155;border-radius:999px;color:var(--muted);font-size:.76rem;font-weight:700;background:#0d1526}.drive-status.synced{color:#bbf7d0;border-color:#2b6d43}.drive-status.warn{color:#fde68a;border-color:#7c5b16}.drive-status.error{color:#fecaca;border-color:#7f1d1d}.hidden{display:none!important}@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}.panel-grid{grid-template-columns:1fr}.topbar{position:static}.form-grid{grid-template-columns:1fr}.health-row{grid-template-columns:90px 1fr 48px}}@media(max-width:520px){.shell{padding:14px 12px 70px}.topbar{padding:20px 14px}.kpis{gap:9px}.kpi{padding:14px;border-radius:14px}.kpi .value{font-size:1.3rem}.panel{padding:14px;border-radius:14px}.item-card{grid-template-columns:54px 1fr}.thumb{width:54px;height:54px}.item-side{grid-column:2;text-align:left;display:flex;gap:12px}.toolbar,.toolbar .search,.toolbar select{width:100%}.action-row>*{flex:1 1 45%}.form-grid.two{grid-template-columns:1fr}.modal form{padding:16px}}
+
+@media(max-width:520px){.photo-actions>*{flex:1 1 45%;justify-content:center}.photo-preview-grid{grid-template-columns:repeat(3,1fr)}}
+
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">RESELLER COMMAND CENTER · WEB</div>
+      <h1>Mel's Found Treasures</h1>
+      <p class="sub">Your inventory, sales, and profit — connected to the same account as your phone.</p>
+      <div id="driveStatus" class="drive-status">Sign in to Supabase</div>
+    </div>
+    <button id="installBtn" class="ghost hidden">Install App</button>
+  </header>
+
+  <main class="shell">
+    <section class="kpis" id="kpis"></section>
+
+    <section class="action-row">
+      <button class="primary" id="addItemBtn">+ Add Item</button>
+      <button class="secondary" id="scanItemBtn">📷 Scan Item</button>
+      <button class="secondary" id="recordSaleBtn">$ Record Sale</button>
+      <button class="secondary" id="exportBtn">Export CSV</button>
+      <label class="secondary file-label">Import CSV<input id="importInput" type="file" accept=".csv" hidden></label>
+      <button class="secondary" id="driveSyncBtn">☁ Sync Drive</button>
+      <button class="secondary" id="backupBtn">Backup App Data</button>
+      <label class="secondary file-label">Restore App Data<input id="restoreInput" type="file" accept="application/json,.json" hidden></label>
+    </section>
+
+    <section class="panel-grid">
+      <article class="panel">
+        <div class="panel-head"><h2>Inventory health</h2><span id="inventoryCount"></span></div>
+        <div id="healthBars" class="health-bars"></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><h2>Quick filters</h2></div>
+        <div class="chips" id="filterChips"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head wrap">
+        <div><h2>Inventory</h2><p class="muted">Tap any item to edit, sell, or review.</p></div>
+        <div class="toolbar">
+          <input id="searchInput" class="search" placeholder="Search title, SKU, location..." />
+          <select id="sortSelect">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="valueHigh">Value: high to low</option>
+            <option value="roiHigh">ROI: high to low</option>
+            <option value="stale">Stalest first</option>
+          </select>
+        </div>
+      </div>
+      <div id="inventoryList" class="inventory-list"></div>
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">📦</div>
+        <h3>No inventory yet</h3>
+        <p>Add your first item or load the demo data to see how the app works.</p>
+        <button id="demoBtn" class="secondary">Load Demo Data</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Sales</h2><span id="salesSummary"></span></div>
+      <div id="salesList" class="sales-list"></div>
+    </section>
+  </main>
+
+  <dialog id="itemDialog" class="modal">
+    <form method="dialog" id="itemForm">
+      <div class="modal-head">
+        <div><div class="eyebrow">INVENTORY ITEM</div><h2 id="itemDialogTitle">Add Item</h2></div>
+        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+
+      <div class="photo-section">
+        <div class="photo-section-head">
+          <div>
+            <strong>Item photos</strong>
+            <div class="muted photo-help">Choose up to 8 pictures from your phone or take a new one.</div>
+          </div>
+          <span id="photoCount" class="photo-count">0 / 8</span>
+        </div>
+        <div class="photo-preview-grid" id="photoPreview"><div class="photo-empty">No photos yet</div></div>
+        <div class="photo-actions">
+          <label class="secondary file-label">Choose Photos<input id="photoLibraryInput" type="file" accept="image/*" multiple hidden></label>
+          <label class="secondary file-label">Take Photo<input id="photoCameraInput" type="file" accept="image/*" capture="environment" hidden></label>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>Item title<input name="title" required placeholder="e.g. HP 410X Black Toner" /></label>
+        <label>SKU<input name="sku" placeholder="e.g. BIN-A12-004" /></label>
+        <label>Category<input name="category" placeholder="Toner, Collectibles, Tools..." /></label>
+        <label>Source<input name="source" placeholder="Estate sale, auction, thrift..." /></label>
+        <label>Quantity Purchased<input name="quantity" type="number" min="1" max="2147483647" step="1" value="1" required></label><label>Quantity Remaining<input name="quantityRemaining" type="number" value="1" readonly></label><p id="stockQuantityHint" class="muted"></p><label>Total purchase cost for all units ($)<input name="cost" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Expected sale price per item ($)<input name="expectedPrice" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Seller-paid shipping ($)<input name="shippingEstimate" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Storage location<input name="location" placeholder="Shelf 2 / Bin B4" /></label>
+        <label>Purchase date<input name="purchaseDate" type="date" /></label>
+        <label>Listing date<input name="listingDate" type="date" /></label>
+        <label>Active listings<input name="activeCount" type="number" min="0" step="1" value="0" /></label>
+        <label>Sold comps<input name="soldCount" type="number" min="0" step="1" value="0" /></label>
+        <label>Marketplace
+          <select name="marketplace">
+            <option>eBay</option><option>Etsy</option><option>Facebook Marketplace</option><option>Mercari</option><option>Poshmark</option><option>Other</option>
+          </select>
+        </label>
+        <label>Status
+          <select name="status"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select>
+        </label>
+      </div>
+      <label>Notes<textarea name="notes" rows="3" placeholder="Condition, flaws, bundle notes, comp observations..."></textarea></label>
+      <input type="hidden" name="id" />
+      <div class="modal-actions">
+        <button type="button" id="deleteItemBtn" class="danger ghost hidden">Delete</button>
+        <span class="grow"></span>
+        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="secondary">Cancel</button>
+        <button type="submit" class="primary">Save Item</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="saleDialog" class="modal small">
+    <form method="dialog" id="saleForm">
+      <div class="modal-head">
+        <div><div class="eyebrow">SALE</div><h2 id="saleDialogTitle">Record Sale</h2></div>
+        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="icon-btn">✕</button>
+      </div>
+      <label>Item<select name="itemId" id="saleItemSelect" required></select></label>
+      <div class="form-grid two">
+        <label>Quantity sold<input name="quantity" type="number" min="1" step="1" value="1" required></label><label>Price per item ($)<input name="pricePerItem" type="number" min="0" step="any" required></label><label>Total sale price ($)<input name="salePrice" type="number" readonly></label><p id="saleQuantityHint"></p><p id="saleProfitPreview"></p>
+        <label>Shipping charged ($)<input name="shippingCharged" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Actual shipping cost ($)<input name="shippingCost" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Platform fees ($)<input name="fees" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Other costs ($)<input name="otherCosts" type="number" min="0" step="0.01" value="0" /></label>
+        <label>Sale date<input name="saleDate" type="date" required /></label>
+      </div>
+      <div class="modal-actions"><span class="grow"></span><button type="button" onclick="this.closest('dialog').close()" value="cancel" class="secondary">Cancel</button><button class="primary" type="submit">Save Sale</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="scanDialog" class="modal small">
+    <form method="dialog">
+      <div class="modal-head">
+        <div><div class="eyebrow">SCAN ITEM</div><h2>Photo workflow</h2></div>
+        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="icon-btn">✕</button>
+      </div>
+      <p class="muted">Version 1 saves the photo directly to the inventory record. AI identification and live eBay comps are the next integration step because they require external API credentials.</p>
+      <button type="button" id="scanToAddBtn" class="primary wide">Take / Choose Photo and Add Item</button>
+    </form>
+  </dialog>
+
+<dialog id="signInDialog" class="modal small"><form id="signInForm">
+<h2>Sign in to your reseller account</h2><p class="muted">Sign in with the same reseller account you use on your phone.</p>
+<label>Email<input name="email" type="email" autocomplete="username" required></label><br>
+<label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+<p id="signInError" role="alert"></p><button class="primary" type="submit">Sign in</button>
+</form></dialog>
+  <div id="toast" class="toast"></div>
+  <script>
+const STORE='reseller-command-center-data';
+const LEGACY_STORES=['reseller-command-center-v1'];
+const BACKUP_FORMAT='reseller-command-center-backup-v1';
+const UPDATED_KEY='reseller-command-center-updated-at';
+const nowISO=()=>new Date().toISOString().slice(0,10);
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n||0));
+const daysBetween=(a,b=new Date())=>{if(!a)return 0;const d=new Date(a+'T12:00:00');return Math.max(0,Math.floor((b-d)/86400000));};
+const uid=()=>crypto.randomUUID?.() || '10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16));
+
+let data=load();
+let activeFilter='all';
+let editingId=null;
+let deferredPrompt=null;
+let workingPhotos=[];
+let localUpdatedAt=Number(localStorage.getItem(UPDATED_KEY)||0);
+let cloudSaveTimer=null;
+let cloudBusy=false;
+const MAX_PHOTOS=8;
+
+const BUNDLED_THUMBNAILS={};
+const BUNDLED_DRIVE_PHOTOS=[];
+// Bundled app connection: publishable key only; requests require the user's session.
+const SB_URL='https://qlzbgzlfuajsxqsjlduo.supabase.co';
+const SB_KEY='sb_publishable_U7wEA2jvrY8uvTS3OcDwvQ_SxrGac3V';
+const TARGET_USER='8520b225-f0b0-4361-b5ee-0039209eeb37';
+let session=null, rawItems=new Map(), rawSales=new Map(), baseline={items:[],sales:[]}, ready=false, saving=false, refreshPromise=null;
+const deep=x=>JSON.parse(JSON.stringify(x));
+function metadata(notes){try{return JSON.parse(notes)?.reseller_import_v1||{};}catch{return {notes:notes||''};}}
+function fromInventory(r){
+ const m=metadata(r.notes);
+ return {...m,id:r.id,title:r.title,sku:r.sku||'',category:r.category||'',cost:Number(r.purchase_price||0),
+  purchaseDate:r.purchase_date||'',source:r.purchase_location||'',expectedPrice:Number(r.asking_price||0),
+  quantity:Number(r.quantity),quantityRemaining:r.quantity_remaining==null?null:Number(r.quantity_remaining),status:r.status.toLowerCase(),createdAt:r.created_at,notes:m.notes||'',photo:m.photo||'',photos:m.photos||[],
+  photoIds:m.photoIds||[],shippingEstimate:Number(m.shippingEstimate||0),location:m.location||'',listingDate:m.listingDate||'',
+  activeCount:Number(m.activeCount||0),soldCount:Number(m.soldCount||0)};
+}
+function toInventory(i){
+ const m={...metadata(rawItems.get(i.id)?.notes),...i};
+ delete m.storagePhotos;
+ if(!String(m.photo||'').startsWith('data:'))m.photo=metadata(rawItems.get(i.id)?.notes).photo||'';
+ // Legacy Drive references are retained until a separate Storage migration.
+ return {id:i.id,user_id:session.user.id,title:i.title,sku:i.sku||'',category:i.category||'',purchase_price:Number(i.cost||0),
+ purchase_date:i.purchaseDate||null,purchase_location:i.source||'',asking_price:Number(i.expectedPrice||0),quantity:Number(i.quantity??1),quantity_remaining:rawItems.get(i.id)?.quantity_remaining??Number(i.quantity??1),
+ status:({unlisted:'Unlisted',listed:'Listed',sold:'Sold'})[i.status],notes:JSON.stringify({reseller_import_v1:m}),created_at:i.createdAt};
+}
+function fromSale(s){return {id:s.id,itemId:s.inventory_id,quantity:Number(s.quantity||1),pricePerItem:Number(s.price_per_item??(Number(s.sale_price)/Number(s.quantity||1))),purchaseCostAllocated:s.purchase_cost_allocated==null?null:Number(s.purchase_cost_allocated),salePrice:Number(s.sale_price),shippingCharged:Number(s.buyer_shipping_paid||0),shippingCost:Number(s.shipping_cost||0),fees:Number(s.marketplace_fees||0),otherCosts:Number(s.other_fees||0),saleDate:(s.sold_at||'').slice(0,10)};}
+function toSale(s){return {id:s.id,user_id:session.user.id,inventory_id:s.itemId,marketplace:data.items.find(i=>i.id===s.itemId)?.marketplace||null,sold_at:s.saleDate+'T00:00:00Z',quantity:1,sale_price:s.salePrice,buyer_shipping_paid:s.shippingCharged,shipping_cost:s.shippingCost,marketplace_fees:s.fees,other_fees:s.otherCosts,notes:JSON.stringify({reseller_import_v1:s})};}
+function setDriveStatus(text,state=''){const el=document.getElementById('driveStatus');el.textContent=text;el.className='drive-status '+state;}
+function cloudMode(){return false;} // No Google Apps Script or automatic Drive migration.
+function normalizeData(v){return {items:Array.isArray(v?.items)?v.items:[],sales:Array.isArray(v?.sales)?v.sales:[]};}
+function load(){return {items:[],sales:[]};} // Never upload the legacy local/Drive snapshot.
+function persistLocal(){} // Session data is not copied into old app data keys.
+async function request(path,options={},auth=true){
+ if(auth)await ensureSession();
+ const response=await fetch(SB_URL+path,{...options,headers:{apikey:SB_KEY,...(auth?{Authorization:'Bearer '+session.access_token}:{}),'Content-Type':'application/json',...options.headers}});
+ const text=await response.text();let value;try{value=text?JSON.parse(text):null;}catch{value=null;}
+ if(!response.ok)throw new Error(value?.message||value?.msg||value?.error_description||'Connection failed ('+response.status+')');
+ return value;
+}
+function storeSession(s){session=s;localStorage.setItem('reseller_supabase_session_v2',JSON.stringify(s));}
+async function ensureSession(){
+ if(!session)throw new Error('Sign in first');
+ if(session.expires_at*1000>Date.now()+60000)return;
+ if(!refreshPromise)refreshPromise=(async()=>{
+  const s=await request('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:session.refresh_token})},false);
+  s.expires_at=Math.floor(Date.now()/1000)+s.expires_in;storeSession(s);
+ })().finally(()=>{refreshPromise=null;});
+ await refreshPromise;
+}
+function editable(enabled){
+ for(const id of ['addItemBtn','scanItemBtn','recordSaleBtn'])document.getElementById(id).disabled=!enabled;
+}
+async function syncFromDrive(){
+ if(saving)throw new Error('Wait for the current save');
+ ready=false;editable(false);setDriveStatus('Loading Supabase…','warn');
+ try{
+  const filter='?user_id=eq.'+TARGET_USER+'&order=id&limit=1000';
+  const [inventory,sales]=await Promise.all([request('/rest/v1/inventory'+filter),request('/rest/v1/sales'+filter)]);
+  if(inventory.length>=1000||sales.length>=1000)throw new Error('Account exceeds this version’s 1,000-row limit');
+  rawItems=new Map(inventory.map(r=>[r.id,r]));
+  rawSales=new Map(sales.map(r=>[r.id,r]));
+  data={items:inventory.map(fromInventory),sales:sales.map(fromSale)};
+  // Bundled thumbnails from the user's export are a display fallback, not a database upload.
+  data.items.forEach(i=>{if(!i.photo&&BUNDLED_THUMBNAILS[i.id])i.photo=BUNDLED_THUMBNAILS[i.id];});
+  if(typeof loadStoredPhotos==='function')await loadStoredPhotos();
+  baseline=deep(data);ready=true;render();editable(true);
+  setDriveStatus(`Supabase · ${data.items.length} items · ${data.sales.length} sales`,'synced');
+ }catch(e){setDriveStatus(e.message,'error');throw e;}
+}
+async function save(){
+ if(!ready||saving)throw new Error('Connect and refresh before saving');
+ saving=true;editable(false);setDriveStatus('Saving to Supabase…','warn');
+ try{
+  const prior=new Map(baseline.items.map(i=>[i.id,i]));
+  const p_items=data.items.filter(i=>JSON.stringify(i)!==JSON.stringify(prior.get(i.id))).map(i=>({row:toInventory(i),expected:rawItems.get(i.id)||null}));
+  const p_sales=data.sales.filter(s=>!baseline.sales.some(b=>b.id===s.id)).map(toSale);
+  const p_deleted=baseline.items.filter(i=>!data.items.some(n=>n.id===i.id)).map(i=>({id:i.id,expected:rawItems.get(i.id)}));
+  await request('/rest/v1/rpc/reseller_save_quantity_inventory_v2',{method:'POST',body:JSON.stringify({p_items,p_sales,p_deleted})});
+ }catch(e){
+  data=deep(baseline);render();setDriveStatus('Save not confirmed: '+e.message,'error');
+  // A network error can happen after commit; never replay writes automatically.
+  throw e;
+ }finally{saving=false;editable(ready);}
+ await syncFromDrive();
+}
+async function startSupabase(){
+ editable(false);
+ // Historical photo imports stay in the Android app; web loads account photos from Supabase.
+ document.getElementById('driveSyncBtn').textContent='Refresh Supabase';
+ document.getElementById('driveSyncBtn').onclick=()=>syncFromDrive().catch(e=>alert(e.message));
+ // Bulk restore/demo are disabled to avoid replacing imported records accidentally.
+ for(const id of ['importInput','restoreInput'])document.getElementById(id).closest('label').remove();
+ document.getElementById('demoBtn').remove();
+ document.querySelector('#emptyState p').textContent='Add an item after signing in, or refresh your account.';
+ const logout=document.createElement('button');logout.className='ghost';logout.textContent='Sign out';
+ logout.onclick=async()=>{
+  if(saving||document.querySelector('dialog[open]'))return alert('Finish or close your open form first.');
+  if(session)try{await request('/auth/v1/logout',{method:'POST'});}catch{}
+  session=null;localStorage.removeItem('reseller_supabase_session_v2');ready=false;data={items:[],sales:[]};baseline=deep(data);rawItems.clear();rawSales.clear();render();editable(false);document.getElementById('signInDialog').showModal();setDriveStatus('Sign in to Supabase','warn');
+ };document.querySelector('.action-row').append(logout);
+ document.getElementById('signInForm').onsubmit=async e=>{
+  e.preventDefault();const f=e.currentTarget,button=f.querySelector('button');button.disabled=true;
+  const error=document.getElementById('signInError');error.textContent='Signing in…';
+  try{
+   const s=await request('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email:f.elements.email.value.trim(),password:f.elements.password.value})},false);
+   if(s.user.id!==TARGET_USER)throw new Error('Use the account that owns your imported inventory.');
+   s.expires_at=Math.floor(Date.now()/1000)+s.expires_in;storeSession(s);f.elements.password.value='';
+   await syncFromDrive();document.getElementById('signInDialog').close();error.textContent='';
+  }catch(err){error.textContent=err.message;}finally{button.disabled=false;}
+ };
+ document.getElementById('signInDialog').addEventListener('cancel',e=>e.preventDefault());
+ try{
+  const saved=JSON.parse(localStorage.getItem('reseller_supabase_session_v2')||'null');
+  if(saved?.user?.id===TARGET_USER){session=saved;await syncFromDrive();return;}
+ }catch{}
+ setDriveStatus('Sign in to Supabase','warn');document.getElementById('signInDialog').showModal();
+}
+
+const PHOTO_BUCKET='reseller-photos';
+let photoImportBusy=false;
+async function loadStoredPhotos(){
+ const rows=await request('/rest/v1/item_photos?user_id=eq.'+TARGET_USER+'&order=sort_order,id&limit=1000');
+ if(rows.length>=1000)throw new Error('Photo count exceeds this version’s 1,000-photo limit');
+ const groups=new Map();
+ for(const r of rows){
+  if(!r.storage_path.startsWith(TARGET_USER+'/'+r.inventory_id+'/'))continue;
+  const signed=await request('/storage/v1/object/sign/'+PHOTO_BUCKET+'/'+r.storage_path,{method:'POST',body:JSON.stringify({expiresIn:3600})});
+  const path=signed.signedURL||signed.signedUrl;
+  if(!path)throw new Error('Could not load a private photo');
+  const url=path.startsWith('https://')?path:SB_URL+(path.startsWith('/storage/v1/')?'':'/storage/v1')+path;
+  const list=groups.get(r.inventory_id)||[];list.push({...r,url});groups.set(r.inventory_id,list);
+ }
+ for(const item of data.items){
+  item.storagePhotos=groups.get(item.id)||[];
+  const primary=item.storagePhotos.find(p=>p.is_primary)||item.storagePhotos[0];
+  if(primary)item.photo=primary.url;
+ }
+}
+function showStoredGallery(item){
+ const old=document.getElementById('cloudPhotoGallery');if(old)old.remove();
+ renderPhotoPreview();
+}
+function storedItemPhotos(){return data.items.find(i=>i.id===editingId)?.storagePhotos||[];}
+function renderPhotoPreview(){
+ const preview=document.getElementById('photoPreview'),stored=storedItemPhotos();
+ document.getElementById('photoCount').textContent=(stored.length+workingPhotos.length)+' / '+MAX_PHOTOS;
+ preview.replaceChildren();
+ function tile(src,label){
+  const box=document.createElement('div');box.className='photo-tile';
+  const image=document.createElement('img');image.src=src;image.alt=label;box.append(image);preview.append(box);return box;
+ }
+ stored.forEach((p,index)=>tile(p.url,'Item photo '+(index+1)));
+ workingPhotos.forEach((p,index)=>{
+  const box=tile(photoSrc(p),'Item photo '+(stored.length+index+1));
+  const remove=document.createElement('button');remove.type='button';remove.className='photo-remove';remove.textContent='×';remove.setAttribute('aria-label','Remove new photo');
+  remove.onclick=()=>{workingPhotos.splice(index,1);renderPhotoPreview();};box.append(remove);
+ });
+ if(!preview.children.length){const empty=document.createElement('div');empty.className='photo-empty';empty.textContent='No photos yet';preview.append(empty);}
+}
+async function hashBytes(bytes){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');}
+async function uploadVerifiedPhoto(photo,bytes){
+ if(bytes.byteLength!==photo.size||await hashBytes(bytes)!==photo.sha256)throw new Error('Bundled photo verification failed');
+ await ensureSession();
+ const headers={apikey:SB_KEY,Authorization:'Bearer '+session.access_token};
+ let response=await fetch(SB_URL+'/storage/v1/object/'+PHOTO_BUCKET+'/'+photo.storage_path,{method:'POST',headers:{...headers,'Content-Type':'image/jpeg','x-upsert':'false'},body:bytes});
+ let uploadError='';
+ if(!response.ok){const error=await response.json().catch(()=>({}));uploadError=error.message||error.error||'Photo upload failed';}
+ // Verify even a newly uploaded object before registering it; retries never overwrite objects.
+ const check=await fetch(SB_URL+'/storage/v1/object/authenticated/'+PHOTO_BUCKET+'/'+photo.storage_path,{headers});
+ if(!check.ok)throw new Error(uploadError||'Stored photo could not be verified');
+ if(await hashBytes(await check.arrayBuffer())!==photo.sha256)throw new Error('Stored photo verification failed');
+ await request('/rest/v1/rpc/reseller_link_photo_v1',{method:'POST',body:JSON.stringify({p_row:{id:photo.id,user_id:TARGET_USER,inventory_id:photo.inventory_id,storage_path:photo.storage_path,sort_order:photo.sort_order,is_primary:photo.is_primary}})});
+}
+async function importDrivePhotos(){
+ if(!ready||saving||photoImportBusy)return;
+ if(document.querySelector('dialog[open]'))return alert('Close your open form first.');
+ if(!confirm('Copy the 25 bundled Drive photos into your private Supabase photo storage? Drive originals will stay in place. Run the photo setup SQL first.'))return;
+ photoImportBusy=true;saving=true;editable(false);const button=document.getElementById('importDrivePhotos');button.disabled=true;
+ try{
+  const photos=BUNDLED_DRIVE_PHOTOS;
+  if(!Array.isArray(photos)||photos.length!==25)throw new Error('Bundled photo data is incomplete');
+  for(let n=0;n<photos.length;n++){
+   const p=photos[n];if(!data.items.some(i=>i.id===p.inventory_id))throw new Error('An original inventory item is missing. Import stopped.');
+   setDriveStatus('Importing photo '+(n+1)+' / '+photos.length,'warn');
+   const bytes=Uint8Array.from(atob(p.base64),c=>c.charCodeAt(0));
+   await uploadVerifiedPhoto(p,bytes.buffer);
+  }
+  alert('All '+photos.length+' photos are copied and verified. Drive originals were kept.');
+ }catch(e){alert('Photo import stopped: '+e.message+' You can retry; verified copies will be reused.');}
+ finally{saving=false;photoImportBusy=false;button.disabled=false;await syncFromDrive().catch(e=>alert(e.message));}
+}
+function addPhotoImportButton(){
+ const button=document.createElement('button');button.id='importDrivePhotos';button.className='secondary';button.textContent='Import 25 Drive Photos';button.onclick=importDrivePhotos;document.querySelector('.action-row').append(button);
+}
+
+let editingSaleId=null;
+function renderSales(){
+ const list=document.getElementById('salesList');
+ const sales=[...data.sales].sort((a,b)=>new Date(b.saleDate)-new Date(a.saleDate));
+ if(!sales.length){list.innerHTML='<div class="muted">No sales recorded yet.</div>';document.getElementById('salesSummary').textContent='';return;}
+ const total=sales.reduce((sum,s)=>sum+saleProfit(s,data.items.find(i=>i.id===s.itemId)),0);
+ document.getElementById('salesSummary').textContent=money(total)+' profit · tap to edit';
+ list.innerHTML=sales.map(s=>{
+  const i=data.items.find(i=>i.id===s.itemId),p=saleProfit(s,i);
+  return `<article class="sale-card" data-sale-id="${escapeHtml(s.id)}" role="button" tabindex="0" aria-label="Edit sale for ${escapeHtml(i?.title||'item')}"><div class="thumb">${i?.photo?`<img src="${escapeHtml(i.photo)}" alt="">`:'Sold'}</div><div><h3>${escapeHtml(i?.title||'Unknown item')}</h3><div class="meta"><span>${escapeHtml(s.saleDate)}</span><span>Sold ${money(s.salePrice)}</span><span>Edit sale</span></div></div><div class="item-side"><div class="${p>=0?'profit':'loss'}">${money(p)} profit</div></div></article>`;
+ }).join('');
+ list.querySelectorAll('[data-sale-id]').forEach(card=>{
+  card.onclick=()=>openEditSale(card.dataset.saleId);
+  card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openEditSale(card.dataset.saleId);}};
+ });
+}
+function openSale(itemId=null){
+ if(!ready||saving)return toast('Wait for the current sync');
+ editingSaleId=null;const f=document.getElementById('saleForm');f.reset();
+ f.elements.itemId.disabled=false;f.elements.saleDate.value=nowISO();populateSaleSelect(itemId);
+ if(itemId){const item=data.items.find(i=>i.id===itemId);if(item)f.elements.salePrice.value=item.expectedPrice||'';}
+ document.getElementById('saleDialogTitle').textContent='Record Sale';
+ f.querySelector('button[type="submit"]').textContent='Save Sale';document.getElementById('saleDialog').showModal();
+}
+function openEditSale(saleId){
+ if(!ready||saving)return toast('Wait for the current sync');
+ const sale=data.sales.find(s=>s.id===saleId);if(!sale)return;
+ editingSaleId=sale.id;const f=document.getElementById('saleForm');f.reset();populateSaleSelect(sale.itemId);
+ f.elements.itemId.value=sale.itemId;f.elements.itemId.disabled=true;
+ for(const key of ['salePrice','shippingCharged','shippingCost','fees','otherCosts','saleDate'])f.elements[key].value=sale[key]??'';
+ document.getElementById('saleDialogTitle').textContent='Edit Sale';
+ f.querySelector('button[type="submit"]').textContent='Save Changes';document.getElementById('saleDialog').showModal();
+}
+function validateSaleChanges(value){
+ const result={saleDate:value.saleDate};
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(result.saleDate||''))throw new Error('Choose a sale date');
+ for(const key of ['salePrice','shippingCharged','shippingCost','fees','otherCosts']){
+  const n=Number(value[key]);if(!Number.isFinite(n)||n<0)throw new Error('Amounts must be zero or greater');result[key]=n;
+ }
+ return result;
+}
+async function updateRecordedSale(saleId,changes){
+ const expected=rawSales.get(saleId);if(!expected)throw new Error('Refresh and reopen this sale');
+ await request('/rest/v1/rpc/reseller_edit_sale_v1',{method:'POST',body:JSON.stringify({p_sale_id:saleId,p_expected:expected,p_changes:validateSaleChanges(changes)})});
+}
+async function handleSaleSubmit(e){
+ e.preventDefault();if(!ready||saving)return;
+ const f=e.currentTarget,button=f.querySelector('button[type="submit"]');button.disabled=true;
+ const wasEditing=!!editingSaleId;let confirmed=false;
+ try{
+  const values=Object.fromEntries(new FormData(f).entries()),changes=validateSaleChanges(values);
+  if(wasEditing){
+   saving=true;editable(false);
+   try{await updateRecordedSale(editingSaleId,changes);confirmed=true;}
+   finally{saving=false;editable(ready);}
+   document.getElementById('saleDialog').close();editingSaleId=null;
+   await syncFromDrive();toast('Sale updated');
+  }else{
+   const sale={...changes,id:uid(),itemId:values.itemId};data.sales.push(sale);
+   const item=data.items.find(i=>i.id===sale.itemId);if(item)item.status='sold';
+   await save();document.getElementById('saleDialog').close();toast('Sale recorded');
+  }
+ }catch(error){alert((confirmed?'Changes saved, but refresh failed: ':'Could not confirm sale: ')+error.message+' Refresh before trying again.');}
+ finally{button.disabled=false;}
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+
+function calcSellThrough(item){const active=Number(item.activeCount||0),sold=Number(item.soldCount||0);const total=active+sold;return total?Math.round((sold/total)*100):null;}
+function expectedNet(item){return Number(item.expectedPrice||0)*.85-Number(item.shippingEstimate||0)-Number(item.cost||0)}
+function saleProfit(sale,item){return Number(sale.salePrice||0)+Number(sale.shippingCharged||0)-Number(sale.shippingCost||0)-Number(sale.fees||0)-Number(sale.otherCosts||0)-Number(sale.purchaseCostAllocated??(Number(item?.cost||0)*Number(sale.quantity||1)/Number(item?.quantity||1)))}
+
+function render(){renderKPIs();renderHealth();renderFilters();renderInventory();renderSales();populateSaleSelect();}
+function renderKPIs(){
+  const unsold=data.items.filter(i=>i.status!=='sold');
+  const soldItems=data.sales.map(s=>({s,item:data.items.find(i=>i.id===s.itemId)}));
+  const cost=unsold.reduce((a,i)=>a+Number(i.cost||0),0);
+  const expected=unsold.reduce((a,i)=>a+Number(i.expectedPrice||0),0);
+  const profit=soldItems.reduce((a,x)=>a+saleProfit(x.s,x.item),0);
+  const avgROI=soldItems.length? soldItems.reduce((a,x)=>a+(Number(x.item?.cost||0)>0?saleProfit(x.s,x.item)/Number(x.item.cost)*100:0),0)/soldItems.length:0;
+  const cards=[['Inventory cost',money(cost),`${unsold.length} unsold items`],['Expected sales',money(expected),'Based on your target prices'],['Realized profit',money(profit),`${data.sales.length} recorded sales`],['Average ROI',`${Math.round(avgROI)}%`,'Across recorded sales']];
+  document.getElementById('kpis').innerHTML=cards.map(c=>`<article class="kpi"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="mini">${c[2]}</div></article>`).join('');
+}
+function renderHealth(){
+  const total=Math.max(1,data.items.filter(i=>i.status!=='sold').length);
+  const listed=data.items.filter(i=>i.status==='listed').length;
+  const unlisted=data.items.filter(i=>i.status==='unlisted').length;
+  const stale=data.items.filter(i=>i.status==='listed'&&daysBetween(i.listingDate)>90).length;
+  const strong=data.items.filter(i=>{const s=calcSellThrough(i);return s!==null&&s>=60&&i.status!=='sold'}).length;
+  const rows=[['Listed',listed],['Unlisted',unlisted],['90+ days',stale],['60%+ ST',strong]];
+  document.getElementById('healthBars').innerHTML=rows.map(([n,v])=>`<div class="health-row"><span>${n}</span><div class="bar"><span style="width:${Math.min(100,v/total*100)}%"></span></div><strong>${v}</strong></div>`).join('');
+  document.getElementById('inventoryCount').textContent=`${data.items.length} total`;
+}
+function renderFilters(){
+  const counts={all:data.items.length,listed:data.items.filter(i=>i.status==='listed').length,unlisted:data.items.filter(i=>i.status==='unlisted').length,stale:data.items.filter(i=>i.status==='listed'&&daysBetween(i.listingDate)>90).length,strong:data.items.filter(i=>{const s=calcSellThrough(i);return s!==null&&s>=60&&i.status!=='sold'}).length,sold:data.items.filter(i=>i.status==='sold').length};
+  const labels={all:'All',listed:'Listed',unlisted:'Death pile',stale:'90+ days',strong:'60%+ sell-through',sold:'Sold'};
+  document.getElementById('filterChips').innerHTML=Object.keys(labels).map(k=>`<button class="chip ${activeFilter===k?'active':''}" data-filter="${k}">${labels[k]} · ${counts[k]}</button>`).join('');
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;render();});
+}
+function filteredItems(){
+  const q=document.getElementById('searchInput')?.value?.toLowerCase()||'';
+  let arr=data.items.filter(i=>{
+    if(activeFilter==='listed'&&i.status!=='listed')return false;if(activeFilter==='unlisted'&&i.status!=='unlisted')return false;if(activeFilter==='sold'&&i.status!=='sold')return false;if(activeFilter==='stale'&&!(i.status==='listed'&&daysBetween(i.listingDate)>90))return false;if(activeFilter==='strong'){const s=calcSellThrough(i);if(!(s!==null&&s>=60&&i.status!=='sold'))return false;}
+    return [i.title,i.sku,i.location,i.category,i.source].join(' ').toLowerCase().includes(q);
+  });
+  const sort=document.getElementById('sortSelect')?.value||'newest';
+  arr.sort((a,b)=>{if(sort==='oldest')return new Date(a.createdAt)-new Date(b.createdAt);if(sort==='valueHigh')return Number(b.expectedPrice)-Number(a.expectedPrice);if(sort==='roiHigh')return expectedNet(b)-expectedNet(a);if(sort==='stale')return daysBetween(b.listingDate)-daysBetween(a.listingDate);return new Date(b.createdAt)-new Date(a.createdAt)});
+  return arr;
+}
+function renderInventory(){
+  const arr=filteredItems(), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
+  if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
+  if(!arr.length){list.innerHTML='<div class="empty-state">No items match this filter.</div>';return;}
+  list.innerHTML=arr.map(i=>{const st=calcSellThrough(i);const age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate);const projected=expectedNet(i);return `<article class="item-card" data-id="${i.id}"><div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div><div class="item-main"><h3>${escapeHtml(i.title||'Untitled item')}</h3><div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div></div><div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div></article>`}).join('');
+  document.querySelectorAll('.item-card').forEach(el=>el.onclick=()=>openItem(el.dataset.id));
+}
+function populateSaleSelect(selectedItemId=null){const sel=document.getElementById('saleItemSelect');const candidates=data.items.filter(i=>i.status!=='sold'||i.id===selectedItemId);sel.innerHTML=candidates.length?candidates.map(i=>`<option value="${i.id}">${escapeHtml(i.title)} · ${money(i.expectedPrice)}</option>`).join(''):'<option value="">No unsold items</option>';if(selectedItemId&&candidates.some(i=>i.id===selectedItemId))sel.value=selectedItemId;}
+
+function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+
+function photoSrc(p){return typeof p==='string'?p:(p?.data||'');}
+function makeThumbnail(dataUrl){
+  return new Promise((resolve,reject)=>{const img=new Image();img.onerror=reject;img.onload=()=>{const canvas=document.createElement('canvas');const max=220;const scale=Math.min(1,max/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.58));};img.src=dataUrl;});
+}
+async function openItem(id=null){
+  editingId=id;const d=document.getElementById('itemDialog'),f=document.getElementById('itemForm');f.reset();f.purchaseDate.value=nowISO();f.status.value='unlisted';f.marketplace.value='eBay';f.id.value='';workingPhotos=[];document.getElementById('deleteItemBtn').classList.toggle('hidden',!id);document.getElementById('itemDialogTitle').textContent=id?'Edit Item':'Add Item';
+  let item=null;
+  if(id){item=data.items.find(x=>x.id===id);if(!item)return;Object.keys(item).forEach(k=>{if(f.elements[k]&&k!=='photo'&&k!=='photos'&&k!=='photoIds')f.elements[k].value=item[k]??''});f.id.value=id;}
+  setupStockFields(item);
+  d.showModal();showStoredGallery(item);
+  if(!item){renderPhotoPreview();return;}
+  if(Array.isArray(item.photos)&&item.photos.length){workingPhotos=item.photos.map(src=>({id:null,data:src,thumb:''}));renderPhotoPreview();return;}
+  renderPhotoPreview();
+}
+
+document.getElementById('itemForm').addEventListener('submit',async e=>{
+  e.preventDefault();const form=e.currentTarget;const submitBtn=form.querySelector('button[type="submit"]');submitBtn.disabled=true;
+  try{
+    const fd=new FormData(form);const obj=Object.fromEntries(fd.entries());['cost','expectedPrice','shippingEstimate','activeCount','soldCount'].forEach(k=>obj[k]=Number(obj[k]||0));
+    const wasEditing=!!editingId;const previous=wasEditing?data.items.find(i=>i.id===editingId):null;const previousStatus=previous?.status||null;const itemId=editingId||uid();obj.id=itemId;validateStockForm(obj,previous,data.sales);
+    let thumb='';if(workingPhotos[0]){try{thumb=await makeThumbnail(photoSrc(workingPhotos[0]));}catch{thumb=previous?.photo||'';}}
+    obj.photos=workingPhotos.map(photoSrc).filter(Boolean);obj.photoIds=previous?.photoIds||[];obj.photo=thumb||obj.photos[0]||previous?.photo||'';
+    if(wasEditing){const idx=data.items.findIndex(i=>i.id===editingId);data.items[idx]={...data.items[idx],...obj,id:itemId};}
+    else{obj.createdAt=new Date().toISOString();data.items.push(obj);}
+    const shouldRecordSale=obj.status==='sold'&&(!wasEditing||previousStatus!=='sold')&&!data.sales.some(s=>s.itemId===itemId);
+    await save();document.getElementById('itemDialog').close();toast('Item saved');if(shouldRecordSale)setTimeout(()=>openSale(itemId),0);
+  }catch(err){alert('Could not confirm save: '+err.message+'\nRefresh before trying again.');}
+  finally{submitBtn.disabled=false;}
+});
+
+document.getElementById('deleteItemBtn').onclick=async()=>{
+ if(!editingId)return;
+ if(data.sales.some(s=>s.itemId===editingId))return alert('Keep sold items to preserve sales history.');
+ if(!confirm('Delete this unsold item?'))return;
+ try{data.items=data.items.filter(i=>i.id!==editingId);await save();document.getElementById('itemDialog').close();toast('Item deleted');}
+ catch(e){alert(e.message+' Refresh before retrying.');}
+};
+
+async function compressPhoto(file){
+  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{const canvas=document.createElement('canvas');const max=1000;const scale=Math.min(1,max/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.68));};img.src=reader.result;};reader.readAsDataURL(file);});
+}
+async function addPhotoFiles(files){
+  const available=MAX_PHOTOS-workingPhotos.length-storedItemPhotos().length;if(available<=0){toast(`Maximum ${MAX_PHOTOS} photos per item`);return;}
+  const selected=[...files].slice(0,available).filter(f=>f.type.startsWith('image/'));
+  for(const file of selected){try{const full=await compressPhoto(file);workingPhotos.push({id:null,data:full,thumb:''});}catch{toast('One photo could not be added');}}
+  renderPhotoPreview();
+  if(files.length>available)toast(`Added ${available}. Maximum is ${MAX_PHOTOS} photos.`);
+}
+document.getElementById('photoLibraryInput').addEventListener('change',async e=>{await addPhotoFiles(e.target.files||[]);e.target.value='';});
+document.getElementById('photoCameraInput').addEventListener('change',async e=>{await addPhotoFiles(e.target.files||[]);e.target.value='';});
+
+document.getElementById('saleForm').addEventListener('submit',handleQuantitySaleSubmit);
+
+function downloadFullBackup(){
+  const backup={format:BACKUP_FORMAT,appVersion:'2.0-supabase',exportedAt:new Date().toISOString(),data:normalizeData(data)};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`reseller-app-backup-${nowISO()}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Full backup downloaded');
+}
+function csvEscape(v){v=String(v??'');return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v}
+function exportCSV(){const headers=['id','title','sku','category','source','cost','expectedPrice','shippingEstimate','location','purchaseDate','listingDate','activeCount','soldCount','marketplace','status','notes','createdAt'];const rows=[headers.join(','),...data.items.map(i=>headers.map(h=>csvEscape(i[h])).join(','))];const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`reseller-inventory-${nowISO()}.csv`;a.click();URL.revokeObjectURL(a.href);}
+function parseCSV(text){const rows=[];let row=[],cell='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(q&&text[i+1]==='"'){cell+='"';i++;}else q=!q;}else if(c===','&&!q){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';}else cell+=c;}if(cell||row.length){row.push(cell);rows.push(row)}return rows;}
+
+document.getElementById('addItemBtn').onclick=()=>openItem();
+document.getElementById('recordSaleBtn').onclick=()=>openSale();
+document.getElementById('scanItemBtn').onclick=()=>document.getElementById('scanDialog').showModal();
+document.getElementById('scanToAddBtn').onclick=()=>{document.getElementById('scanDialog').close();openItem();setTimeout(()=>document.getElementById('photoCameraInput').click(),150)};
+document.getElementById('exportBtn').onclick=exportCSV;
+document.getElementById('driveSyncBtn').onclick=syncFromDrive;
+document.getElementById('backupBtn').onclick=downloadFullBackup;
+document.getElementById('searchInput').addEventListener('input',renderInventory);
+document.getElementById('sortSelect').addEventListener('change',renderInventory);
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').classList.remove('hidden')});
+document.getElementById('installBtn').onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('installBtn').classList.add('hidden')};
+
+render();
+startSupabase().catch(e=>setDriveStatus(e.message,'error'));
+
+  function quantityTotal(q,p){q=Number(q);if(!Number.isSafeInteger(q)||q<1)throw Error('Quantity must be a whole number of at least 1');if(!String(p).trim()||!Number.isFinite(Number(p))||Number(p)<0)throw Error('Enter a valid unit price');const cents=q*Math.round(Number(p)*100);if(!Number.isSafeInteger(cents))throw Error('Sale too large');return cents/100;}
+function populateSaleSelect(selected=null){const el=document.getElementById('saleItemSelect'),prev=selected||el.value;const rows=data.items.filter(i=>(i.quantityRemaining>0&&i.status!=='sold')||i.id===selected);el.innerHTML=rows.map(i=>`<option value="${escapeHtml(i.id)}">${escapeHtml(i.title)} · ${i.quantityRemaining??'unknown'} remaining</option>`).join('')||'<option value="">No stock available</option>';if(rows.some(i=>i.id===prev))el.value=prev;}
+function refreshSaleCalculation(){const f=document.getElementById('saleForm'),i=data.items.find(i=>i.id===f.elements.itemId.value),q=Number(f.elements.quantity.value);f.elements.quantity.max=editingSaleId?q:(i?.quantityRemaining??0);try{f.elements.salePrice.value=quantityTotal(q,f.elements.pricePerItem.value).toFixed(2);}catch{f.elements.salePrice.value='';}document.getElementById('saleQuantityHint').textContent=editingSaleId?'Existing sale quantity is fixed.':`Available: ${i?.quantityRemaining??'unknown'} · After sale: ${(i?.quantityRemaining??0)-q}`;const old=data.sales.find(s=>s.id===editingSaleId);const cost=old?(old.purchaseCostAllocated??i?.cost??0):Number(i?.cost||0)*q/Number(i?.quantity||1);document.getElementById('saleProfitPreview').textContent='Estimated profit: '+money(Number(f.elements.salePrice.value||0)+Number(f.elements.shippingCharged.value||0)-Number(f.elements.shippingCost.value||0)-Number(f.elements.fees.value||0)-Number(f.elements.otherCosts.value||0)-cost);}
+const legacyOpenSale=openSale,legacyOpenEditSale=openEditSale;
+openSale=function(id=null){legacyOpenSale(id);if(!ready||saving)return;const f=document.getElementById('saleForm');f.elements.quantity.readOnly=false;f.elements.quantity.value=1;f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();};
+openEditSale=function(id){legacyOpenEditSale(id);if(!ready||saving)return;const s=data.sales.find(s=>s.id===id);if(!s)return;const f=document.getElementById('saleForm');f.elements.quantity.value=s.quantity;f.elements.quantity.readOnly=true;f.elements.pricePerItem.value=s.pricePerItem;refreshSaleCalculation();};
+async function handleQuantitySaleSubmit(e){e.preventDefault();if(!ready||saving)return;const f=e.currentTarget,b=f.querySelector('button[type="submit"]');b.disabled=true;let confirmed=false;try{const v=Object.fromEntries(new FormData(f).entries()),old=data.sales.find(s=>s.id===editingSaleId);const c=validateSaleChanges({...v,salePrice:quantityTotal(v.quantity,v.pricePerItem)});c.quantity=Number(v.quantity);c.pricePerItem=Number(v.pricePerItem);if(old&&c.quantity!==old.quantity)throw Error('Existing quantity cannot be changed');if(old&&c.pricePerItem===old.pricePerItem)c.salePrice=old.salePrice;const id=old?.itemId||v.itemId,i=data.items.find(i=>i.id===id);if(!old&&(!i||i.quantityRemaining==null||c.quantity>i.quantityRemaining))throw Error('Insufficient stock; refresh inventory');saving=true;editable(false);await request('/rest/v1/rpc/reseller_quantity_sale_v1',{method:'POST',body:JSON.stringify({p_sale_id:old?.id||uid(),p_inventory_id:id,p_expected_sale:old?rawSales.get(old.id):null,p_expected_inventory:old?null:rawItems.get(id),p_changes:c})});confirmed=true;document.getElementById('saleDialog').close();editingSaleId=null;}catch(err){ready=false;alert('Could not confirm sale: '+err.message+' Refresh before trying again.');}finally{saving=false;b.disabled=false;editable(ready);}if(confirmed)try{await syncFromDrive();toast('Sale saved');}catch(err){alert('Sale saved, but refresh failed: '+err.message);}}
+document.getElementById('saleForm').addEventListener('input',refreshSaleCalculation);
+document.getElementById('saleItemSelect').addEventListener('change',()=>{if(!editingSaleId){const f=document.getElementById('saleForm');f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();}});
+
+
+function stockLocked(item,sales){return !!item&&(sales.some(s=>s.itemId===item.id)||item.quantityRemaining==null||item.quantityRemaining!==item.quantity);}
+function validateStockForm(obj,previous,sales){
+ const q=Number(obj.quantity);
+ if(!Number.isSafeInteger(q)||q<1||q>2147483647)throw Error('Quantity Purchased must be a whole number of at least 1');
+ if(stockLocked(previous,sales)&&(q!==previous.quantity||Number(obj.cost)!==Number(previous.cost)))throw Error('Purchase quantity and cost are fixed after stock has sold. Add a separate item for another purchase.');
+ if(!Number.isFinite(Number(obj.cost))||Number(obj.cost)<0)throw Error('Enter a valid total purchase cost');
+ obj.quantity=q;obj.quantityRemaining=stockLocked(previous,sales)?previous.quantityRemaining:q;
+}
+function setupStockFields(item){
+ const f=document.getElementById('itemForm'),locked=stockLocked(item,data.sales);
+ f.elements.quantity.value=item?.quantity??1;f.elements.quantity.readOnly=locked;f.elements.cost.readOnly=locked;
+ f.elements.quantityRemaining.value=item?.quantityRemaining??(item?'':1);
+ document.getElementById('stockQuantityHint').textContent=locked?'Purchase quantity and total cost are fixed after sales or an unknown stock balance. Add another item for a new purchase.':'Enter the number purchased and the total cost for all units. Remaining stock updates when you record a sale.';
+}
+document.getElementById('itemForm').elements.quantity.addEventListener('input',e=>{if(!e.target.readOnly)document.getElementById('itemForm').elements.quantityRemaining.value=e.target.value;});
+
+</script>
+</body>
+</html>
