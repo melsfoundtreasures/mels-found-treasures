@@ -166,7 +166,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
         <label>Actual shipping cost ($)<input name="shippingCost" type="number" min="0" step="0.01" value="0" /></label>
         <label>Platform fees ($)<input name="fees" type="number" min="0" step="0.01" value="0" /></label>
         <label>Other costs ($)<input name="otherCosts" type="number" min="0" step="0.01" value="0" /></label>
-        <label>Sale date<input name="saleDate" type="date" required /></label>
+        <label>Sold on<select name="marketplace" id="saleMarketplace" required><option value="">Choose platform</option><option>eBay</option><option>Etsy</option><option>Facebook Marketplace</option><option>Poshmark</option></select></label><label>Sale date<input name="saleDate" type="date" required /></label>
       </div>
       <div class="modal-actions"><span class="grow"></span><button type="button" onclick="this.closest('dialog').close()" value="cancel" class="secondary">Cancel</button><button class="primary" type="submit">Save Sale</button></div>
     </form>
@@ -237,8 +237,8 @@ function toInventory(i){
  purchase_date:i.purchaseDate||null,purchase_location:i.source||'',asking_price:Number(i.expectedPrice||0),quantity:Number(i.quantity??1),quantity_remaining:rawItems.get(i.id)?.quantity_remaining??Number(i.quantity??1),
  status:({unlisted:'Unlisted',listed:'Listed',sold:'Sold'})[i.status],notes:JSON.stringify({reseller_import_v1:m}),created_at:i.createdAt};
 }
-function fromSale(s){return {id:s.id,itemId:s.inventory_id,quantity:Number(s.quantity||1),pricePerItem:Number(s.price_per_item??(Number(s.sale_price)/Number(s.quantity||1))),purchaseCostPending:!!s.purchase_cost_pending,purchaseCostAllocated:s.purchase_cost_allocated==null?null:Number(s.purchase_cost_allocated),salePrice:Number(s.sale_price),shippingCharged:Number(s.buyer_shipping_paid||0),shippingCost:Number(s.shipping_cost||0),fees:Number(s.marketplace_fees||0),otherCosts:Number(s.other_fees||0),saleDate:(s.sold_at||'').slice(0,10)};}
-function toSale(s){return {id:s.id,user_id:session.user.id,inventory_id:s.itemId,marketplace:data.items.find(i=>i.id===s.itemId)?.marketplace||null,sold_at:s.saleDate+'T00:00:00Z',quantity:1,sale_price:s.salePrice,buyer_shipping_paid:s.shippingCharged,shipping_cost:s.shippingCost,marketplace_fees:s.fees,other_fees:s.otherCosts,notes:JSON.stringify({reseller_import_v1:s})};}
+function fromSale(s){return {id:s.id,itemId:s.inventory_id,marketplace:s.marketplace||'',quantity:Number(s.quantity||1),pricePerItem:Number(s.price_per_item??(Number(s.sale_price)/Number(s.quantity||1))),purchaseCostPending:!!s.purchase_cost_pending,purchaseCostAllocated:s.purchase_cost_allocated==null?null:Number(s.purchase_cost_allocated),salePrice:Number(s.sale_price),shippingCharged:Number(s.buyer_shipping_paid||0),shippingCost:Number(s.shipping_cost||0),fees:Number(s.marketplace_fees||0),otherCosts:Number(s.other_fees||0),saleDate:(s.sold_at||'').slice(0,10)};}
+function toSale(s){return {id:s.id,user_id:session.user.id,inventory_id:s.itemId,marketplace:s.marketplace||data.items.find(i=>i.id===s.itemId)?.marketplace||null,sold_at:s.saleDate+'T00:00:00Z',quantity:1,sale_price:s.salePrice,buyer_shipping_paid:s.shippingCharged,shipping_cost:s.shippingCost,marketplace_fees:s.fees,other_fees:s.otherCosts,notes:JSON.stringify({reseller_import_v1:s})};}
 function setDriveStatus(text,state=''){const el=document.getElementById('driveStatus');el.textContent=text;el.className='drive-status '+state;}
 function cloudMode(){return false;} // No Google Apps Script or automatic Drive migration.
 function normalizeData(v){return {items:Array.isArray(v?.items)?v.items:[],sales:Array.isArray(v?.sales)?v.sales:[]};}
@@ -414,7 +414,7 @@ function renderSales(){
  document.getElementById('salesSummary').textContent=money(total)+' known profit; '+sales.filter(s=>s.purchaseCostPending).length+' need costs';
  list.innerHTML=sales.map(s=>{
   const i=data.items.find(i=>i.id===s.itemId),p=saleProfit(s,i);
-  return `<article class="sale-card" data-sale-id="${escapeHtml(s.id)}" role="button" tabindex="0" aria-label="Edit sale for ${escapeHtml(i?.title||'item')}"><div class="thumb">${i?.photo?`<img src="${escapeHtml(i.photo)}" alt="">`:'Sold'}</div><div><h3>${escapeHtml(i?.title||'Unknown item')}</h3><div class="meta"><span>${escapeHtml(s.saleDate)}</span><span>Sold ${money(s.salePrice)}</span><span>Edit sale</span></div></div><div class="item-side"><div class="${p>=0?'profit':'loss'}">${s.purchaseCostPending?'Cost needed — tap to enter':money(p)+' profit'}</div></div></article>`;
+  return `<article class="sale-card" data-sale-id="${escapeHtml(s.id)}" role="button" tabindex="0" aria-label="Edit sale for ${escapeHtml(i?.title||'item')}"><div class="thumb">${i?.photo?`<img src="${escapeHtml(i.photo)}" alt="">`:'Sold'}</div><div><h3>${escapeHtml(i?.title||'Unknown item')}</h3><div class="meta"><span>${escapeHtml(s.saleDate)}</span><span>Sold ${money(s.salePrice)}</span>${s.marketplace?`<span>${escapeHtml(s.marketplace)}</span>`:''}<span>Edit sale</span></div></div><div class="item-side"><div class="${p>=0?'profit':'loss'}">${s.purchaseCostPending?'Cost needed — tap to enter':money(p)+' profit'}</div></div></article>`;
  }).join('');
  list.querySelectorAll('[data-sale-id]').forEach(card=>{
   card.onclick=()=>openEditSale(card.dataset.saleId);
@@ -638,6 +638,14 @@ startSupabase().catch(e=>setDriveStatus(e.message,'error'));
 
   function quantityTotal(q,p){q=Number(q);if(!Number.isSafeInteger(q)||q<1)throw Error('Quantity must be a whole number of at least 1');if(!String(p).trim()||!Number.isFinite(Number(p))||Number(p)<0)throw Error('Enter a valid unit price');const cents=q*Math.round(Number(p)*100);if(!Number.isSafeInteger(cents))throw Error('Sale too large');return cents/100;}
 function populateSaleSelect(selected=null){const el=document.getElementById('saleItemSelect'),prev=selected||el.value;const rows=data.items.filter(i=>(i.quantityRemaining>0&&i.status!=='sold')||i.id===selected);el.innerHTML=rows.map(i=>`<option value="${escapeHtml(i.id)}">${escapeHtml(i.title)} · ${i.quantityRemaining??'unknown'} remaining</option>`).join('')||'<option value="">No stock available</option>';if(rows.some(i=>i.id===prev))el.value=prev;}
+const SALE_PLATFORMS=['eBay','Etsy','Facebook Marketplace','Poshmark'];
+function normalizeSalePlatform(value){const key=String(value||'').trim().toLowerCase().replace(/\s+/g,'');return ({ebay:'eBay',etsy:'Etsy',facebookmarketplace:'Facebook Marketplace',facebook:'Facebook Marketplace',poshmark:'Poshmark'})[key]||'';}
+function setSalePlatform(value,preserveLegacy=false){
+ const select=document.getElementById('saleMarketplace'),normalized=normalizeSalePlatform(value),legacy=!normalized&&preserveLegacy?String(value||''):'';
+ select.innerHTML='<option value="">Choose platform</option>'+SALE_PLATFORMS.map(p=>`<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('')+(legacy?`<option value="${escapeHtml(legacy)}">${escapeHtml(legacy)} (existing)</option>`:'');
+ select.value=normalized||legacy;
+}
+function validateSalePlatform(value,old){const normalized=normalizeSalePlatform(value);if(normalized)return normalized;if(old?.marketplace&&value===old.marketplace)return value;throw Error('Choose the platform this sale was made on');}
 let salePriceSource='unit';
 function saleAmountValues(quantity,unit,total,source){
  const q=Number(quantity);if(!Number.isSafeInteger(q)||q<1||q>2147483647)throw Error('Enter a whole quantity of at least 1');
@@ -670,11 +678,11 @@ function saleCOGInfo(item,sale,q,sales){
  return {valid:true,known:true,total};
 }
 const legacyOpenSale=openSale,legacyOpenEditSale=openEditSale;
-openSale=function(id=null){salePriceSource='unit';legacyOpenSale(id);if(!ready||saving)return;const f=document.getElementById('saleForm');f.elements.quantity.readOnly=false;f.elements.costOfGoods.readOnly=true;f.elements.costOfGoods.required=false;f.elements.quantity.value=1;f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();};
-openEditSale=function(id){salePriceSource='total';legacyOpenEditSale(id);if(!ready||saving)return;const s=data.sales.find(s=>s.id===id);if(!s)return;const f=document.getElementById('saleForm');f.elements.quantity.value=s.quantity;f.elements.quantity.readOnly=true;f.elements.pricePerItem.value=s.pricePerItem;f.elements.salePrice.value=Number(s.salePrice).toFixed(2);f.elements.costOfGoods.readOnly=false;f.elements.costOfGoods.required=!s.purchaseCostPending;f.elements.costOfGoods.value=s.purchaseCostPending?'':costPerUnitDisplay(Number(s.purchaseCostAllocated??(Number(data.items.find(i=>i.id===s.itemId)?.cost||0)*s.quantity/Number(data.items.find(i=>i.id===s.itemId)?.quantity||1))),s.quantity);refreshSaleCalculation();};
+openSale=function(id=null){salePriceSource='unit';legacyOpenSale(id);if(!ready||saving)return;const f=document.getElementById('saleForm');setSalePlatform(data.items.find(i=>i.id===f.elements.itemId.value)?.marketplace);f.elements.quantity.readOnly=false;f.elements.costOfGoods.readOnly=true;f.elements.costOfGoods.required=false;f.elements.quantity.value=1;f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();};
+openEditSale=function(id){salePriceSource='total';legacyOpenEditSale(id);if(!ready||saving)return;const s=data.sales.find(s=>s.id===id);if(!s)return;const f=document.getElementById('saleForm');setSalePlatform(s.marketplace,true);f.elements.quantity.value=s.quantity;f.elements.quantity.readOnly=true;f.elements.pricePerItem.value=s.pricePerItem;f.elements.salePrice.value=Number(s.salePrice).toFixed(2);f.elements.costOfGoods.readOnly=false;f.elements.costOfGoods.required=!s.purchaseCostPending;f.elements.costOfGoods.value=s.purchaseCostPending?'':costPerUnitDisplay(Number(s.purchaseCostAllocated??(Number(data.items.find(i=>i.id===s.itemId)?.cost||0)*s.quantity/Number(data.items.find(i=>i.id===s.itemId)?.quantity||1))),s.quantity);refreshSaleCalculation();};
 async function handleQuantitySaleSubmit(e){
  e.preventDefault();if(!ready||saving)return;const f=e.currentTarget,b=f.querySelector('button[type="submit"]');b.disabled=true;let confirmed=false;
- try{const v=Object.fromEntries(new FormData(f).entries()),old=data.sales.find(s=>s.id===editingSaleId);const amounts=saleAmountValues(v.quantity,v.pricePerItem,v.salePrice,salePriceSource);const changes={...validateSaleChanges({...v,salePrice:amounts.salePrice}),...amounts};if(old&&changes.quantity!==old.quantity)throw Error('Existing quantity cannot be changed');
+ try{const v=Object.fromEntries(new FormData(f).entries()),old=data.sales.find(s=>s.id===editingSaleId);const amounts=saleAmountValues(v.quantity,v.pricePerItem,v.salePrice,salePriceSource);const changes={...validateSaleChanges({...v,salePrice:amounts.salePrice}),...amounts,marketplace:validateSalePlatform(v.marketplace,old)};if(old&&changes.quantity!==old.quantity)throw Error('Existing quantity cannot be changed');
  const itemId=old?.itemId||v.itemId,item=data.items.find(i=>i.id===itemId);if(!old&&(!item||item.quantityRemaining==null||changes.quantity>item.quantityRemaining))throw Error('Insufficient stock; refresh inventory');saving=true;editable(false);
  if(old)changes.costOfGoods=costPerUnitTotal(v.costOfGoods,changes.quantity,old.purchaseCostPending,saleCOGInfo(item,old,changes.quantity,data.sales).total);
  await request('/rest/v1/rpc/reseller_save_sale_total_v1',{method:'POST',body:JSON.stringify({p_sale_id:old?.id||uid(),p_inventory_id:itemId,p_expected_sale:old?rawSales.get(old.id):null,p_expected_inventory:rawItems.get(itemId),p_changes:changes})});
@@ -700,7 +708,7 @@ function costPerUnitTotal(value,quantity,allowUnknown=false,originalTotal=null){
 function editSaleCOG(value,allowUnknown=false){const text=String(value??'').trim();if(!text){if(allowUnknown)return null;throw Error('Enter Cost of Goods, including 0 for an actual zero');}const cents=salesMoney(text);if(cents<0)throw Error('Cost of Goods must be zero or greater');return cents/100;}
 
 document.getElementById('saleForm').addEventListener('input',refreshSaleCalculation);
-document.getElementById('saleItemSelect').addEventListener('change',()=>{if(!editingSaleId){salePriceSource='unit';const f=document.getElementById('saleForm');f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();}});
+document.getElementById('saleItemSelect').addEventListener('change',()=>{if(!editingSaleId){salePriceSource='unit';const f=document.getElementById('saleForm');setSalePlatform(data.items.find(i=>i.id===f.elements.itemId.value)?.marketplace);f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();}});
 
 
 function stockLocked(item,sales){return !!item&&(sales.some(s=>s.itemId===item.id)||item.quantityRemaining==null||item.quantityRemaining!==item.quantity);}
