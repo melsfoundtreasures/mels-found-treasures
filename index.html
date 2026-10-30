@@ -140,9 +140,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
             <option>eBay</option><option>Etsy</option><option>Facebook Marketplace</option><option>Mercari</option><option>Poshmark</option><option>Other</option>
           </select>
         </label>
-        <label>Status
-          <select name="status"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select><small>Select Sold, then Save Item to enter the sale details. Status and stock update when you save the sale.</small>
-        </label>
+        <div><label for="itemStatusSelect">Status</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select name="status" id="itemStatusSelect" style="flex:1;min-width:120px"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select><button type="button" id="inventoryRecordSaleBtn" class="primary" style="flex:0 0 auto">Record Sale</button></div><small id="inventoryRecordSaleHint">Record Sale opens the sale window directly using saved inventory details. Save other item edits first.</small></div>
       </div>
       <label>Notes<textarea name="notes" rows="3" placeholder="Condition, flaws, bundle notes, comp observations..."></textarea></label>
       <input type="hidden" name="id" />
@@ -533,18 +531,36 @@ function escapeHtml(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','
 
 function photoSrc(p){return typeof p==='string'?p:(p?.data||'');}
 function makeThumbnail(dataUrl){
-  return new Promise((resolve,reject)=>{const img=new Image();img.onerror=reject;img.onload=()=>{const canvas=document.createElement('canvas');const max=220;const scale=Math.min(1,max/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.58));};img.src=dataUrl;});
+  return new Promise((resolve,reject)=>{const img=new Image();img.onerror=reject;img.onload=()=>{try{const canvas=document.createElement('canvas');const max=220;const scale=Math.min(1,max/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/jpeg',.58));}catch(error){reject(error);}};img.src=dataUrl;});
 }
 async function openItem(id=null){
   editingId=id;const d=document.getElementById('itemDialog'),f=document.getElementById('itemForm');f.reset();f.purchaseDate.value=nowISO();f.status.value='unlisted';f.marketplace.value='eBay';f.id.value='';workingPhotos=[];document.getElementById('deleteItemBtn').classList.toggle('hidden',!id);document.getElementById('itemDialogTitle').textContent=id?'Edit Item':'Add Item';
   let item=null;
   if(id){item=data.items.find(x=>x.id===id);if(!item)return;Object.keys(item).forEach(k=>{if(f.elements[k]&&k!=='photo'&&k!=='photos'&&k!=='photoIds')f.elements[k].value=item[k]??''});f.id.value=id;}
-  setupStockFields(item);
+  setupStockFields(item);setupInventorySaleButton(item);
   d.showModal();showStoredGallery(item);
   if(!item){renderPhotoPreview();return;}
   if(Array.isArray(item.photos)&&item.photos.length){workingPhotos=item.photos.map(src=>({id:null,data:src,thumb:''}));renderPhotoPreview();return;}
   renderPhotoPreview();
 }
+
+let inventorySaleActive=false;
+function setupInventorySaleButton(item){
+ const button=document.getElementById('inventoryRecordSaleBtn'),hint=document.getElementById('inventoryRecordSaleHint');
+ const available=!!item&&Number.isSafeInteger(item.quantityRemaining)&&item.quantityRemaining>0&&item.status!=='sold';
+ button.disabled=!available;
+ button.textContent=item&&item.quantityRemaining===0?'Sold Out':'Record Sale';
+ hint.textContent=!item?'Save the new item first, then use Record Sale.':available?'Record Sale opens the sale window directly using saved inventory details. Save other item edits first.':item.quantityRemaining==null?'Refresh and confirm the remaining stock before recording a sale.':'No remaining stock to sell.';
+}
+function recordSaleFromInventory(){
+ if(!ready||saving)return toast('Wait for the current sync');
+ const item=data.items.find(i=>i.id===editingId);
+ if(!item||item.status==='sold'||!Number.isSafeInteger(item.quantityRemaining)||item.quantityRemaining<1)return toast('Save the item and confirm remaining stock first');
+ // Keep the item dialog and its draft underneath; cancelling the sale returns to it.
+ inventorySaleActive=true;openSale(item.id);
+}
+document.getElementById('inventoryRecordSaleBtn').onclick=recordSaleFromInventory;
+document.getElementById('saleDialog').addEventListener('close',()=>{inventorySaleActive=false;});
 
 document.getElementById('itemForm').addEventListener('submit',async e=>{
   e.preventDefault();const form=e.currentTarget;const submitBtn=form.querySelector('button[type="submit"]');submitBtn.disabled=true;
@@ -556,7 +572,10 @@ document.getElementById('itemForm').addEventListener('submit',async e=>{
       if(previous&&(previous.quantityRemaining==null||previous.quantityRemaining<=0))throw Error('Check the remaining stock before recording a sale. Refresh Supabase and reopen the item.');
       obj.status=previousStatus||'unlisted';
     }
-    let thumb='';if(workingPhotos[0]){try{thumb=await makeThumbnail(photoSrc(workingPhotos[0]));}catch{thumb=previous?.photo||'';}}
+    let thumb=previous?.photo||'';
+    // Remote photos already exist; canvas export is only needed for new local image data.
+    const firstPhoto=workingPhotos[0]?photoSrc(workingPhotos[0]):'';
+    if(firstPhoto.startsWith('data:image/')){try{thumb=await makeThumbnail(firstPhoto);}catch{thumb=previous?.photo||'';}}
     obj.photos=workingPhotos.map(photoSrc).filter(Boolean);obj.photoIds=previous?.photoIds||[];obj.photo=thumb||obj.photos[0]||previous?.photo||'';
     if(wasEditing){const idx=data.items.findIndex(i=>i.id===editingId);data.items[idx]={...data.items[idx],...obj,id:itemId};}
     else{obj.createdAt=new Date().toISOString();data.items.push(obj);}
@@ -650,7 +669,7 @@ async function handleQuantitySaleSubmit(e){
  const itemId=old?.itemId||v.itemId,item=data.items.find(i=>i.id===itemId);if(!old&&(!item||item.quantityRemaining==null||changes.quantity>item.quantityRemaining))throw Error('Insufficient stock; refresh inventory');saving=true;editable(false);
  if(old){changes.costOfGoods=costPerUnitTotal(v.costOfGoods,changes.quantity,old.purchaseCostPending,saleCOGInfo(item,old,changes.quantity,data.sales).total);await request('/rest/v1/rpc/reseller_edit_sale_cog_v1',{method:'POST',body:JSON.stringify({p_sale_id:old.id,p_inventory_id:itemId,p_expected_sale:rawSales.get(old.id),p_expected_inventory:rawItems.get(itemId),p_changes:changes})});}
  else await request('/rest/v1/rpc/reseller_quantity_sale_v1',{method:'POST',body:JSON.stringify({p_sale_id:uid(),p_inventory_id:itemId,p_expected_sale:null,p_expected_inventory:rawItems.get(itemId),p_changes:changes})});
- confirmed=true;document.getElementById('saleDialog').close();editingSaleId=null;await refreshSavedCostItem(itemId);toast('Sale saved');
+ confirmed=true;if(inventorySaleActive){document.getElementById('itemDialog').close();inventorySaleActive=false;}document.getElementById('saleDialog').close();editingSaleId=null;await refreshSavedCostItem(itemId);toast('Sale saved');
  }catch(err){ready=false;alert((confirmed?'Sale saved, but refresh failed: ':'Could not confirm sale: ')+err.message+' Refresh before trying again.');}
  finally{saving=false;b.disabled=false;editable(ready);}
 }
