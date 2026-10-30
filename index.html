@@ -24,6 +24,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 #missingCostsDialog td,#missingCostsDialog th{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}#missingCostsDialog input{margin:6px 0;max-width:180px}
 
 @media(min-width:1100px){.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}button.costs-need-update:hover{background:#991b1b}button.costs-need-update:focus-visible{outline:3px solid #fca5a5;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -86,7 +88,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
     </section>
 
     <section class="panel">
-      <div class="panel-head"><h2>Sales</h2><button id="salesMissingCostsBtn" class="secondary">Sales needing costs</button><span id="salesSummary"></span></div>
+      <div class="panel-head"><h2>Sales</h2><button id="salesMissingCostsBtn" class="secondary">Missing COG (0)</button><span id="salesSummary"></span></div>
       <div id="salesList" class="sales-list"></div>
     </section>
   </main>
@@ -741,7 +743,7 @@ function missingCostRecords(items,sales){
  for(const item of items){if(pendingParents.has(item.id)||Number(item.cost||0)!==0)continue;if(item.purchaseCostConfirmed===true||item.purchaseCostUnknown===false)continue;const unknown=item.purchaseCostUnknown===true||item.cost==null;result.push({kind:'item',id:item.id,itemId:item.id,title:item.title,quantity:item.quantity||1,label:unknown?'Unknown inventory cost':'Unconfirmed $0 — review',unknown});}
  return result;
 }
-function refreshMissingCosts(){const records=missingCostRecords(data.items,data.sales),unknown=records.filter(r=>r.unknown).length,zero=records.length-unknown;document.getElementById('missingCostsBtn').textContent='Missing Costs ('+records.length+')';document.getElementById('salesMissingCostsBtn').textContent='Sales needing costs ('+records.filter(r=>r.kind==='sale'||data.sales.some(s=>s.itemId===r.itemId)).length+')';if(document.getElementById('missingCostsDialog').open&&!missingCostsBusy)renderMissingCosts();}
+function refreshMissingCosts(){const records=missingCostRecords(data.items,data.sales),unknown=records.filter(r=>r.unknown).length,zero=records.length-unknown;document.getElementById('missingCostsBtn').textContent='Missing Costs ('+records.length+')';const salesCount=records.filter(r=>r.kind==='sale'||data.sales.some(s=>s.itemId===r.itemId)).length;document.getElementById('salesMissingCostsBtn').textContent='Missing COG ('+salesCount+')';document.getElementById('salesMissingCostsBtn').classList.toggle('costs-need-update',salesCount>0);document.getElementById('missingCostsBtn').classList.toggle('costs-need-update',records.length>0);if(document.getElementById('missingCostsDialog').open&&!missingCostsBusy)renderMissingCosts();}
 function renderMissingCosts(){
  const records=missingCostRecords(data.items,data.sales),filter=document.getElementById('missingCostsFilter').value,visible=records.filter(r=>filter==='all'||(filter==='sales'?(r.kind==='sale'||data.sales.some(s=>s.itemId===r.itemId)):filter==='unknown'?r.unknown:!r.unknown));
  document.getElementById('missingCostsCount').textContent=records.filter(r=>r.unknown).length+' unknown costs · '+records.filter(r=>!r.unknown).length+' older $0 costs to review. Confirmed zero costs are not listed.';
