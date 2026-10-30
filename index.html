@@ -26,6 +26,12 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-off
 @media(min-width:1100px){.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
 button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}button.costs-need-update:hover{background:#991b1b}button.costs-need-update:focus-visible{outline:3px solid #fca5a5;outline-offset:3px}
+
+/* Keep account status and actions together above scrolling page content. */
+.topbar{position:sticky;top:0;z-index:20;display:block;padding-top:16px;padding-bottom:12px;background:rgba(8,13,26,.97)}
+.topbar>.action-row,.topbar>div>.action-row{margin:12px 0 0;gap:8px}
+.topbar .action-row>*{white-space:nowrap}
+@media(max-width:860px){.topbar{position:sticky;top:0}.topbar .action-row{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:8px;scrollbar-width:thin}.topbar .action-row>*{flex:0 0 auto}.topbar h1{font-size:1.5rem}}
 </style>
 </head>
 <body>
@@ -35,14 +41,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       <h1>Mel's Found Treasures</h1>
       <p class="sub">Your inventory, sales, and profit — connected to the same account as your phone.</p>
       <div id="driveStatus" class="drive-status">Sign in to Supabase</div>
-    </div>
-    <button id="installBtn" class="ghost hidden">Install App</button>
-  </header>
-
-  <main class="shell">
-    <section class="kpis" id="kpis"></section>
-
-    <section class="action-row">
+    <nav class="action-row" aria-label="Main actions">
       <button class="primary" id="addItemBtn">+ Add Item</button>
       <button class="secondary" id="scanItemBtn">📷 Scan Item</button>
       <button class="secondary" id="recordSaleBtn">$ Record Sale</button>
@@ -51,7 +50,15 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       <button class="secondary" id="driveSyncBtn">☁ Sync Drive</button>
       <button class="secondary" id="backupBtn">Backup App Data</button>
       <label class="secondary file-label">Restore App Data<input id="restoreInput" type="file" accept="application/json,.json" hidden></label>
-    </section>
+    </nav>
+    </div>
+    <button id="installBtn" class="ghost hidden">Install App</button>
+  </header>
+
+  <main class="shell">
+    <section class="kpis" id="kpis"></section>
+
+
 
     <section class="panel-grid">
       <article class="panel">
@@ -66,7 +73,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
 
     <section class="panel">
       <div class="panel-head wrap">
-        <div><h2>Inventory</h2><p class="muted">Tap any item to edit, sell, or review.</p></div>
+        <div><h2><button id="inventoryViewBtn" class="ghost" type="button" style="font:inherit">Inventory</button></h2><p id="inventoryViewHint" class="muted"></p></div><button id="inventoryHomeBtn" class="secondary hidden" type="button">Back to home</button>
         <div class="toolbar">
           <input id="searchInput" class="search" placeholder="Search title, SKU, location..." />
           <select id="sortSelect">
@@ -514,10 +521,12 @@ function filteredItems(){
   arr.sort((a,b)=>{if(sort==='oldest')return new Date(a.createdAt)-new Date(b.createdAt);if(sort==='valueHigh')return Number(b.expectedPrice)-Number(a.expectedPrice);if(sort==='roiHigh')return expectedNet(b)-expectedNet(a);if(sort==='stale')return daysBetween(b.listingDate)-daysBetween(a.listingDate);return new Date(b.createdAt)-new Date(a.createdAt)});
   return arr;
 }
+let inventoryFullView=false;
 function renderInventory(){
-  const arr=filteredItems(), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
+  updateInventoryViewLabels();
+  const arr=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
   if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
-  if(!arr.length){list.innerHTML='<div class="empty-state">No items match this filter.</div>';return;}
+  if(!arr.length){list.innerHTML='<div class="empty-state">'+(inventoryFullView?'No items match this filter.':'No listed items yet. Select Inventory to see all records.')+'</div>';return;}
   list.innerHTML=arr.map(i=>{const st=calcSellThrough(i);const age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate);const projected=expectedNet(i);return `<article class="item-card" data-id="${i.id}"><div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div><div class="item-main"><h3>${escapeHtml(i.title||'Untitled item')}</h3><div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div></div><div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div></article>`}).join('');
   document.querySelectorAll('.item-card').forEach(el=>el.onclick=()=>openItem(el.dataset.id));
 }
@@ -847,6 +856,19 @@ async function completeSavedImport(dialogId,statusId){
  try{await syncFromDrive();}
  catch(error){alert('The import was saved, but the account refresh failed: '+error.message+' Use Refresh Supabase; do not repeat the import just because the refresh failed.');}
 }
+
+function latestListedItems(items){
+ const timestamp=item=>{const listed=Date.parse(item.listingDate||'');return Number.isFinite(listed)?listed:(Date.parse(item.createdAt||'')||0);};
+ return items.filter(item=>item.status==='listed').sort((a,b)=>timestamp(b)-timestamp(a)||(Date.parse(b.createdAt||'')||0)-(Date.parse(a.createdAt||'')||0)||String(a.id).localeCompare(String(b.id))).slice(0,6);
+}
+function updateInventoryViewLabels(){
+ document.getElementById('inventoryViewBtn').textContent='Inventory ('+data.items.length+')';
+ document.getElementById('inventoryHomeBtn').classList.toggle('hidden',!inventoryFullView);
+ document.getElementById('inventoryViewHint').textContent=inventoryFullView?'All inventory. Search, filter, or select an item to edit.':'The six most recently listed items. Select Inventory to see more.';
+}
+document.getElementById('inventoryViewBtn').onclick=()=>{inventoryFullView=true;renderInventory();};
+document.getElementById('inventoryHomeBtn').onclick=()=>{inventoryFullView=false;activeFilter='all';document.getElementById('searchInput').value='';document.getElementById('sortSelect').value='newest';render();};
+for(const [id,event] of [['searchInput','input'],['sortSelect','change'],['filterChips','click']])document.getElementById(id).addEventListener(event,()=>{inventoryFullView=true;},true);
 </script>
 </body>
 </html>
