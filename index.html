@@ -141,7 +141,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
           </select>
         </label>
         <label>Status
-          <select name="status"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select>
+          <select name="status"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select><small>Select Sold, then Save Item to enter the sale details. Status and stock update when you save the sale.</small>
         </label>
       </div>
       <label>Notes<textarea name="notes" rows="3" placeholder="Condition, flaws, bundle notes, comp observations..."></textarea></label>
@@ -551,12 +551,16 @@ document.getElementById('itemForm').addEventListener('submit',async e=>{
   try{
     const fd=new FormData(form);const obj=Object.fromEntries(fd.entries());['cost','expectedPrice','shippingEstimate','activeCount','soldCount'].forEach(k=>obj[k]=Number(obj[k]||0));
     const wasEditing=!!editingId;const previous=wasEditing?data.items.find(i=>i.id===editingId):null;const previousStatus=previous?.status||null;const itemId=editingId||uid();obj.id=itemId;validateStockForm(obj,previous,data.sales);
+    const shouldRecordSale=obj.status==='sold'&&previousStatus!=='sold';
+    if(shouldRecordSale){
+      if(previous&&(previous.quantityRemaining==null||previous.quantityRemaining<=0))throw Error('Check the remaining stock before recording a sale. Refresh Supabase and reopen the item.');
+      obj.status=previousStatus||'unlisted';
+    }
     let thumb='';if(workingPhotos[0]){try{thumb=await makeThumbnail(photoSrc(workingPhotos[0]));}catch{thumb=previous?.photo||'';}}
     obj.photos=workingPhotos.map(photoSrc).filter(Boolean);obj.photoIds=previous?.photoIds||[];obj.photo=thumb||obj.photos[0]||previous?.photo||'';
     if(wasEditing){const idx=data.items.findIndex(i=>i.id===editingId);data.items[idx]={...data.items[idx],...obj,id:itemId};}
     else{obj.createdAt=new Date().toISOString();data.items.push(obj);}
-    const shouldRecordSale=obj.status==='sold'&&(!wasEditing||previousStatus!=='sold')&&!data.sales.some(s=>s.itemId===itemId);
-    await save();document.getElementById('itemDialog').close();toast('Item saved');if(shouldRecordSale)setTimeout(()=>openSale(itemId),0);
+    await save();document.getElementById('itemDialog').close();toast(shouldRecordSale?'Item saved. Enter the sale details to finish.':'Item saved');if(shouldRecordSale)openSale(itemId);
   }catch(err){alert('Could not confirm save: '+err.message+'\nRefresh before trying again.');}
   finally{submitBtn.disabled=false;}
 });
