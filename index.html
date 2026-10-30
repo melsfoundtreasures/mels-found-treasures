@@ -284,21 +284,19 @@ async function syncFromDrive(){
  }catch(e){setDriveStatus(e.message,'error');throw e;}
 }
 async function save(){
- if(!ready||saving)throw new Error('Connect and refresh before saving');
- saving=true;editable(false);setDriveStatus('Saving to Supabase…','warn');
+ if(!ready||saving)throw Error('Connect and refresh before saving');saving=true;editable(false);setDriveStatus('Saving to Supabase…','warn');let confirmed=false;
  try{
   const prior=new Map(baseline.items.map(i=>[i.id,i]));
   const p_items=data.items.filter(i=>JSON.stringify(i)!==JSON.stringify(prior.get(i.id))).map(i=>({row:toInventory(i),expected:rawItems.get(i.id)||null}));
   const p_sales=data.sales.filter(s=>!baseline.sales.some(b=>b.id===s.id)).map(toSale);
   const p_deleted=baseline.items.filter(i=>!data.items.some(n=>n.id===i.id)).map(i=>({id:i.id,expected:rawItems.get(i.id)}));
-  await request('/rest/v1/rpc/reseller_save_quantity_inventory_v2',{method:'POST',body:JSON.stringify({p_items,p_sales,p_deleted})});
- }catch(e){
-  data=deep(baseline);render();setDriveStatus('Save not confirmed: '+e.message,'error');
-  // A network error can happen after commit; never replay writes automatically.
-  throw e;
- }finally{saving=false;editable(ready);}
- await syncFromDrive();
+  await request('/rest/v1/rpc/reseller_save_quantity_inventory_v2',{method:'POST',body:JSON.stringify({p_items,p_sales,p_deleted})});confirmed=true;
+  if(p_items.length===1&&p_items[0].expected&&!p_sales.length&&!p_deleted.length)await refreshSavedCostItem(p_items[0].row.id);
+  else{saving=false;await syncFromDrive();}
+ }catch(e){if(!confirmed){data=deep(baseline);render();}ready=false;setDriveStatus((confirmed?'Saved, but refresh failed: ':'Save not confirmed: ')+e.message,'error');throw e;}
+ finally{saving=false;editable(ready);}
 }
+
 async function startSupabase(){
  editable(false);
  // Historical photo imports stay in the Android app; web loads account photos from Supabase.
@@ -758,15 +756,14 @@ function openPendingSaleCost(id){
  document.getElementById('pendingCostDialog').showModal();
 }
 document.getElementById('pendingCostForm').onsubmit=async e=>{
- e.preventDefault();if(!ready||saving||!pendingCostSaleId)return;const form=e.currentTarget,button=form.querySelector('button[type="submit"]');const input=form.elements.purchaseCost.value;let confirmed=false;
- try{const cents=salesMoney(input);if(cents<0)throw Error('Cost must be zero or greater');const expected=rawSales.get(pendingCostSaleId);if(!expected)throw Error('Refresh and reopen this sale');saving=true;editable(false);button.disabled=true;
- await request('/rest/v1/rpc/reseller_complete_sale_cost_v1',{method:'POST',body:JSON.stringify({p_sale_id:pendingCostSaleId,p_expected:expected,p_cost:cents/100})});confirmed=true;document.getElementById('pendingCostDialog').close();pendingCostSaleId=null;
- }catch(err){document.getElementById('pendingCostError').textContent=err.message+' Refresh before retrying.';ready=false;}
+ e.preventDefault();if(!ready||saving||!pendingCostSaleId)return;const form=e.currentTarget,button=form.querySelector('button[type="submit"]');let confirmed=false;
+ try{const cents=salesMoney(form.elements.purchaseCost.value);if(cents<0)throw Error('Cost must be zero or greater');const expected=rawSales.get(pendingCostSaleId);if(!expected)throw Error('Refresh and reopen this sale');saving=true;editable(false);button.disabled=true;
+ await request('/rest/v1/rpc/reseller_complete_sale_cost_v1',{method:'POST',body:JSON.stringify({p_sale_id:pendingCostSaleId,p_expected:expected,p_cost:cents/100})});confirmed=true;
+ document.getElementById('pendingCostDialog').close();pendingCostSaleId=null;await refreshSavedCostItem(expected.inventory_id);toast('Purchase cost saved');
+ }catch(err){ready=false;if(confirmed)alert('Cost saved, but this item could not be refreshed: '+err.message+' Use Refresh Supabase before another save.');else document.getElementById('pendingCostError').textContent=err.message+' Refresh before retrying.';}
  finally{saving=false;button.disabled=false;editable(ready);}
- if(confirmed)try{await syncFromDrive();toast('Purchase cost saved');}catch(err){alert('Cost saved, but refresh failed: '+err.message);}
 };
-
-let missingCostsBusy=false;
+let missingCostsBusy=false;const missingCostDrafts=new Map();
 function missingCostRecords(items,sales){
  const result=[],pendingParents=new Set();
  for(const sale of sales)if(sale.purchaseCostPending){const item=items.find(i=>i.id===sale.itemId);result.push({kind:'sale',id:sale.id,itemId:sale.itemId,title:item?.title||'Imported sale',quantity:sale.quantity||1,label:'Unknown sale cost',unknown:true});pendingParents.add(sale.itemId);}
@@ -775,13 +772,14 @@ function missingCostRecords(items,sales){
 }
 function refreshMissingCosts(){const records=missingCostRecords(data.items,data.sales),unknown=records.filter(r=>r.unknown).length,zero=records.length-unknown;document.getElementById('missingCostsBtn').textContent='Missing Costs ('+records.length+')';const salesCount=records.filter(r=>r.kind==='sale'||data.sales.some(s=>s.itemId===r.itemId)).length;document.getElementById('salesMissingCostsBtn').textContent='Missing COG ('+salesCount+')';document.getElementById('salesMissingCostsBtn').classList.toggle('costs-need-update',salesCount>0);document.getElementById('missingCostsBtn').classList.toggle('costs-need-update',records.length>0);if(document.getElementById('missingCostsDialog').open&&!missingCostsBusy)renderMissingCosts();}
 function renderMissingCosts(){
+ document.getElementById('missingCostsRows').querySelectorAll('[data-cost-key]').forEach(form=>missingCostDrafts.set(form.dataset.costKey,form.elements.cost.value));
  const records=missingCostRecords(data.items,data.sales),filter=document.getElementById('missingCostsFilter').value,visible=records.filter(r=>filter==='all'||(filter==='sales'?(r.kind==='sale'||data.sales.some(s=>s.itemId===r.itemId)):filter==='unknown'?r.unknown:!r.unknown));
  document.getElementById('missingCostsCount').textContent=records.filter(r=>r.unknown).length+' unknown costs · '+records.filter(r=>!r.unknown).length+' older $0 costs to review. Confirmed zero costs are not listed.';
- const body=document.getElementById('missingCostsRows');body.innerHTML=visible.map((r,n)=>`<tr><td>${escapeHtml(r.title)}<br><small>${escapeHtml(r.label)}</small></td><td>${r.quantity}</td><td><form data-cost-row="${n}"><label>Total purchase cost ($)<input name="cost" type="number" min="0" step="0.01" required placeholder="Enter cost" aria-label="Total purchase cost for ${escapeHtml(r.title)}"></label><button type="submit" class="primary">Save cost</button></form></td></tr>`).join('')||'<tr><td colspan="3">No records in this view.</td></tr>';
- body.querySelectorAll('[data-cost-row]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();if(!ready||saving||missingCostsBusy)return;const record=visible[Number(form.dataset.costRow)];try{const cents=salesMoney(form.elements.cost.value);if(cents<0)throw Error('Enter a cost of zero or greater');const expected=record.kind==='sale'?rawSales.get(record.id):rawItems.get(record.id);if(!expected)throw Error('Refresh before saving');missingCostsBusy=true;saving=true;editable(false);body.querySelectorAll('input,button').forEach(x=>x.disabled=true);document.getElementById('missingCostsClose').disabled=true;document.getElementById('missingCostsFilter').disabled=true;document.getElementById('missingCostsStatus').textContent='Saving cost…';
- const endpoint=record.kind==='sale'?'reseller_complete_sale_cost_v1':'reseller_set_missing_item_cost_v1';const payload=record.kind==='sale'?{p_sale_id:record.id,p_expected:expected,p_cost:cents/100}:{p_item_id:record.id,p_expected:expected,p_cost:cents/100};await request('/rest/v1/rpc/'+endpoint,{method:'POST',body:JSON.stringify(payload)});
- saving=false;await syncFromDrive();document.getElementById('missingCostsStatus').textContent='Cost saved. The record is no longer in the missing-cost list.';
- }catch(err){ready=false;document.getElementById('missingCostsStatus').textContent='Save not confirmed: '+err.message+' Close this window and refresh Supabase before retrying.';}
+ const body=document.getElementById('missingCostsRows');body.innerHTML=visible.map((r,n)=>`<tr><td>${escapeHtml(r.title)}<br><small>${escapeHtml(r.label)}</small></td><td>${r.quantity}</td><td><form data-cost-row="${n}" data-cost-key="${r.kind}:${escapeHtml(r.id)}"><label>Total purchase cost ($)<input name="cost" type="number" min="0" step="0.01" required placeholder="Enter cost" value="${escapeHtml(missingCostDrafts.get(r.kind+':'+r.id)||'')}" aria-label="Total purchase cost for ${escapeHtml(r.title)}"></label><button type="submit" class="primary">Save cost</button></form></td></tr>`).join('')||'<tr><td colspan="3">No records in this view.</td></tr>';
+ body.querySelectorAll('[data-cost-row]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();if(!ready||saving||missingCostsBusy)return;const record=visible[Number(form.dataset.costRow)];let costConfirmed=false;try{const cents=salesMoney(form.elements.cost.value);if(cents<0)throw Error('Enter a cost of zero or greater');const expected=record.kind==='sale'?rawSales.get(record.id):rawItems.get(record.id);if(!expected)throw Error('Refresh before saving');missingCostsBusy=true;saving=true;editable(false);body.querySelectorAll('input,button').forEach(x=>x.disabled=true);document.getElementById('missingCostsClose').disabled=true;document.getElementById('missingCostsFilter').disabled=true;document.getElementById('missingCostsStatus').textContent='Saving cost…';
+ const endpoint=record.kind==='sale'?'reseller_complete_sale_cost_v1':'reseller_set_missing_item_cost_v1';const payload=record.kind==='sale'?{p_sale_id:record.id,p_expected:expected,p_cost:cents/100}:{p_item_id:record.id,p_expected:expected,p_cost:cents/100};await request('/rest/v1/rpc/'+endpoint,{method:'POST',body:JSON.stringify(payload)});costConfirmed=true;
+ await refreshSavedCostItem(record.itemId);missingCostDrafts.delete(record.kind+':'+record.id);document.getElementById('missingCostsStatus').textContent='Cost saved. Ready for the next item.';
+ }catch(err){ready=false;document.getElementById('missingCostsStatus').textContent=(costConfirmed?'Cost saved, but this item refresh failed: ':'Save not confirmed: ')+err.message+' Close this window and refresh Supabase before retrying.';}
  finally{saving=false;missingCostsBusy=false;editable(ready);document.getElementById('missingCostsClose').disabled=false;document.getElementById('missingCostsFilter').disabled=false;if(ready)renderMissingCosts();refreshMissingCosts();}});
 }
 document.getElementById('missingCostsBtn').onclick=()=>{if(!ready||saving)return toast('Connect and finish the current save first');document.getElementById('missingCostsStatus').textContent='Enter the total cost for all purchased units shown. For items with recorded sales, the confirmed lot cost will also be allocated to those sales. Enter 0 only to confirm the item actually cost nothing.';renderMissingCosts();document.getElementById('missingCostsDialog').showModal();};
@@ -869,6 +867,25 @@ function updateInventoryViewLabels(){
 document.getElementById('inventoryViewBtn').onclick=()=>{inventoryFullView=true;renderInventory();};
 document.getElementById('inventoryHomeBtn').onclick=()=>{inventoryFullView=false;activeFilter='all';document.getElementById('searchInput').value='';document.getElementById('sortSelect').value='newest';render();};
 for(const [id,event] of [['searchInput','input'],['sortSelect','change'],['filterChips','click']])document.getElementById(id).addEventListener(event,()=>{inventoryFullView=true;},true);
+// Refresh just the item changed by a cost save, without listing or re-signing photos.
+async function refreshSavedCostItem(itemId){
+ if(!itemId)throw Error('Missing saved item identifier');
+ const owner='user_id=eq.'+encodeURIComponent(TARGET_USER),id=encodeURIComponent(itemId);
+ const [items,sales]=await Promise.all([request('/rest/v1/inventory?'+owner+'&id=eq.'+id+'&limit=1'),request('/rest/v1/sales?'+owner+'&inventory_id=eq.'+id+'&order=id&limit=1000')]);
+ if(!Array.isArray(items)||items.length!==1||items[0].id!==itemId||items[0].user_id!==TARGET_USER)throw Error('Saved item could not be refreshed');
+ if(!Array.isArray(sales)||sales.length>=1000||sales.some(s=>s.inventory_id!==itemId||s.user_id!==TARGET_USER))throw Error('Related sales could not be refreshed');
+ const old=data.items.find(i=>i.id===itemId),oldMeta=metadata(rawItems.get(itemId)?.notes),newMeta=metadata(items[0].notes),fresh=fromInventory(items[0]);
+ const photoInputs=m=>JSON.stringify([m.photo||'',m.photos||[],m.photoIds||[]]);
+ // Cost edits cannot change storage objects. Keep the existing signed gallery URLs.
+ if(old?.storagePhotos){fresh.storagePhotos=old.storagePhotos;const primary=old.storagePhotos.find(p=>p.is_primary)||old.storagePhotos[0];if(primary)fresh.photo=primary.url;}
+ if(!fresh.storagePhotos?.length&&old?.photo&&photoInputs(oldMeta)===photoInputs(newMeta))fresh.photo=old.photo;
+ const freshSales=sales.map(fromSale);
+ rawItems.set(itemId,items[0]);for(const [key,row] of rawSales)if(row.inventory_id===itemId)rawSales.delete(key);for(const row of sales)rawSales.set(row.id,row);
+ data.items=data.items.map(i=>i.id===itemId?fresh:i);data.sales=data.sales.filter(s=>s.itemId!==itemId).concat(freshSales);
+ baseline.items=baseline.items.map(i=>i.id===itemId?deep(fresh):i);baseline.sales=baseline.sales.filter(s=>s.itemId!==itemId).concat(deep(freshSales));
+ render();setDriveStatus(`Supabase · ${data.items.length} items · ${data.sales.length} sales`,'synced');
+}
+
 </script>
 </body>
 </html>
