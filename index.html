@@ -797,7 +797,7 @@ function vendooEnrichmentPlan(source,inventory,photos,sales){
  const linked=sales.filter(s=>s.inventory_id===item.id),pending=linked.filter(s=>s.purchase_cost_pending);
  const confirmed=m.purchaseCostConfirmed===true||m.purchaseCostUnknown===false||Number(item.purchase_price||0)>0;
  const missing=pending.length>0||(!confirmed&&Number(item.purchase_price||0)===0);
- if(missing){const raw=String(r['Cost of Goods']??'').trim();if(!raw){notes.push('Purchase cost not supplied');}else if(Number(item.quantity)!==1){notes.push('Multi-unit cost basis needs manual review');}else if(item.status!=='Sold'&&(Number(r['Quantity Left'])!==1||Number(r['Quantity Sold']||0)!==0||linked.length>0)){notes.push('Remaining/sold units need cost review');}else if(item.status==='Sold'&&(Number(r['Quantity Sold']||0)!==1||linked.length!==1||Number(linked[0]?.quantity)!==1||String(r['Price Sold']||'').trim()===''||(()=>{try{return salesMoney(r['Price Sold'])!==Math.round(Number(linked[0].sale_price)*100);}catch{return true;}})())){notes.push('Sold quantity/price match needs cost review');}else if(pending.length>1||(!pending.length&&linked.some(s=>Number(s.purchase_cost_allocated||0)!==0))){notes.push('Existing sale allocations need review');}else{try{const cents=salesMoney(raw);if(cents<0)throw Error();out.cost=cents/100;if(pending.length===1){out.pendingSaleId=pending[0].id;out.expectedSale=pending[0];}notes.push('Fill purchase cost '+money(out.cost));}catch{notes.push('Invalid purchase cost; review manually');}}}else notes.push('Confirmed purchase cost kept');
+ if(missing){const raw=String(r['Cost of Goods']??'').trim();if(!raw){notes.push('Purchase cost not supplied');}else if(Number(item.quantity)!==1){notes.push('Multi-unit cost basis needs manual review');}else if(item.status!=='Sold'&&(Number(r['Quantity Left'])!==1||Number(r['Quantity Sold']||0)!==0||linked.length>0)){notes.push('Remaining/sold units need cost review');}else if(item.status==='Sold'&&vendooSoldCostNeedsReview(item,r,linked,inventory)){notes.push('Sold quantity/price match needs cost review');}else if(pending.length>1||(!pending.length&&linked.some(s=>Number(s.purchase_cost_allocated||0)!==0))){notes.push('Existing sale allocations need review');}else{try{const cents=salesMoney(raw);if(cents<0)throw Error();out.cost=cents/100;if(pending.length===1){out.pendingSaleId=pending[0].id;out.expectedSale=pending[0];}notes.push('Fill purchase cost '+money(out.cost));if(item.status==='Sold'&&!String(r['Price Sold']||'').trim())notes.push('Vendoo sold price is blank; matched the only sold item with this title');}catch{notes.push('Invalid purchase cost; review manually');}}}else notes.push('Confirmed purchase cost kept');
  if(existingPhoto)notes.push('Existing photo kept');if(out.photo!==null||out.cost!==null)out.state='fill';out.reason=notes.join('; ')||'No missing values to fill';return out;});
 }
 const listingUploadBeforeCostFill=handlePlatformListingFile;
@@ -813,6 +813,13 @@ elEbay('vendooEnrichSave').onclick=async()=>{if(!ready||saving||vendooEnrichment
 
 
 function finishImportDialog(dialogId,statusId){const message=elEbay(statusId).textContent;elEbay(dialogId).close();if(elEbay('platformUploadDialog').open)elEbay('platformUploadDialog').close();toast(message||'Import completed');}
+
+function vendooSoldCostNeedsReview(item,source,sales,inventory){
+ if(Number(item.quantity)!==1||Number(source['Quantity Sold']||0)!==1||sales.length!==1||Number(sales[0]?.quantity)!==1)return true;
+ const price=String(source['Price Sold']||'').trim();
+ if(price){try{return salesMoney(price)!==Math.round(Number(sales[0].sale_price)*100);}catch{return true;}}
+ return inventory.filter(other=>other.status==='Sold'&&ebayKey(other.title)===ebayKey(item.title)).length!==1;
+}
 </script>
 </body>
 </html>
