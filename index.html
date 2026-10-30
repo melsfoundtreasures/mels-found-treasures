@@ -161,7 +161,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       </div>
       <label>Item<select name="itemId" id="saleItemSelect" required></select></label>
       <div class="form-grid two">
-        <label>Quantity sold<input name="quantity" type="number" min="1" step="1" value="1" required></label><label>Price per item ($)<input name="pricePerItem" type="number" min="0" step="any" required></label><label>Total sale price ($)<input name="salePrice" type="number" readonly></label><label>Cost of Goods per unit ($)<input name="costOfGoods" id="saleCostOfGoods" type="number" min="0" step="any" readonly aria-describedby="saleCostOfGoodsHint"></label><p id="saleCostOfGoodsHint" class="muted"></p><p id="saleQuantityHint"></p><p id="saleProfitPreview"></p>
+        <label>Quantity sold<input name="quantity" type="number" min="1" step="1" value="1" required></label><label>Price per item ($)<input name="pricePerItem" type="number" min="0" step="any" required></label><label>Total sale price ($)<input name="salePrice" type="number" min="0" step="0.01" required></label><label>Cost of Goods per unit ($)<input name="costOfGoods" id="saleCostOfGoods" type="number" min="0" step="any" readonly aria-describedby="saleCostOfGoodsHint"></label><p id="saleCostOfGoodsHint" class="muted"></p><p id="saleQuantityHint"></p><p id="saleProfitPreview"></p>
         <label>Shipping charged ($)<input name="shippingCharged" type="number" min="0" step="0.01" value="0" /></label>
         <label>Actual shipping cost ($)<input name="shippingCost" type="number" min="0" step="0.01" value="0" /></label>
         <label>Platform fees ($)<input name="fees" type="number" min="0" step="0.01" value="0" /></label>
@@ -638,11 +638,20 @@ startSupabase().catch(e=>setDriveStatus(e.message,'error'));
 
   function quantityTotal(q,p){q=Number(q);if(!Number.isSafeInteger(q)||q<1)throw Error('Quantity must be a whole number of at least 1');if(!String(p).trim()||!Number.isFinite(Number(p))||Number(p)<0)throw Error('Enter a valid unit price');const cents=q*Math.round(Number(p)*100);if(!Number.isSafeInteger(cents))throw Error('Sale too large');return cents/100;}
 function populateSaleSelect(selected=null){const el=document.getElementById('saleItemSelect'),prev=selected||el.value;const rows=data.items.filter(i=>(i.quantityRemaining>0&&i.status!=='sold')||i.id===selected);el.innerHTML=rows.map(i=>`<option value="${escapeHtml(i.id)}">${escapeHtml(i.title)} · ${i.quantityRemaining??'unknown'} remaining</option>`).join('')||'<option value="">No stock available</option>';if(rows.some(i=>i.id===prev))el.value=prev;}
-function refreshSaleCalculation(){
+let salePriceSource='unit';
+function saleAmountValues(quantity,unit,total,source){
+ const q=Number(quantity);if(!Number.isSafeInteger(q)||q<1||q>2147483647)throw Error('Enter a whole quantity of at least 1');
+ const cents=salesMoney(source==='total'?total:unit);if(cents<0)throw Error('Sale price must be zero or greater');
+ const totalCents=source==='total'?cents:q*cents;if(!Number.isSafeInteger(totalCents))throw Error('Sale total is too large');
+ return {quantity:q,pricePerItem:source==='total'?(totalCents/100)/q:cents/100,salePrice:totalCents/100};
+}
+function refreshSaleCalculation(e){
+ if(e?.target?.name==='salePrice')salePriceSource='total';
+ else if(e?.target?.name==='pricePerItem')salePriceSource='unit';
  const f=document.getElementById('saleForm'),item=data.items.find(i=>i.id===f.elements.itemId.value),q=Number(f.elements.quantity.value),old=data.sales.find(s=>s.id===editingSaleId);
  f.elements.quantity.max=editingSaleId?q:(item?.quantityRemaining??0);
- try{f.elements.salePrice.value=quantityTotal(q,f.elements.pricePerItem.value).toFixed(2);}catch{f.elements.salePrice.value='';}
- document.getElementById('saleQuantityHint').textContent=editingSaleId?'Existing sale quantity is fixed.':`Available: ${item?.quantityRemaining??'unknown'} · After sale: ${(item?.quantityRemaining??0)-q}`;
+ try{const amounts=saleAmountValues(q,f.elements.pricePerItem.value,f.elements.salePrice.value,salePriceSource);if(salePriceSource==='total')f.elements.pricePerItem.value=String(amounts.pricePerItem);else f.elements.salePrice.value=amounts.salePrice.toFixed(2);}catch{if(salePriceSource==='unit')f.elements.salePrice.value='';}
+ document.getElementById('saleQuantityHint').textContent=(editingSaleId?'Existing sale quantity is fixed.':`Available: ${item?.quantityRemaining??'unknown'} · After sale: ${(item?.quantityRemaining??0)-q}`)+' Edit either price per item or total sale price. The last price field you edit controls the amount.';
  const info=saleCOGInfo(item,old,q,data.sales),field=document.getElementById('saleCostOfGoods'),hint=document.getElementById('saleCostOfGoodsHint');
  if(old){hint.textContent='Enter the cost of one unit. The app calculates the total for '+q+' unit(s) sold.';const value=field.value.trim();if(!value){document.getElementById('saleProfitPreview').textContent='Profit pending purchase cost';return;}try{const cost=costPerUnitTotal(value,q,false,saleCOGInfo(item,old,q,data.sales).total);hint.textContent='Cost per unit × '+q+' unit(s) = '+money(cost)+' total COG. Other sales costs and stock quantities stay unchanged.';const profit=Number(f.elements.salePrice.value||0)+Number(f.elements.shippingCharged.value||0)-Number(f.elements.shippingCost.value||0)-Number(f.elements.fees.value||0)-Number(f.elements.otherCosts.value||0)-cost;document.getElementById('saleProfitPreview').textContent='Estimated profit: '+money(profit);}catch{document.getElementById('saleProfitPreview').textContent='Enter a valid Cost of Goods amount';}return;}
  if(!info.valid){field.value='';hint.textContent='Choose an item and a valid quantity.';document.getElementById('saleProfitPreview').textContent='';return;}
@@ -661,14 +670,14 @@ function saleCOGInfo(item,sale,q,sales){
  return {valid:true,known:true,total};
 }
 const legacyOpenSale=openSale,legacyOpenEditSale=openEditSale;
-openSale=function(id=null){legacyOpenSale(id);if(!ready||saving)return;const f=document.getElementById('saleForm');f.elements.quantity.readOnly=false;f.elements.costOfGoods.readOnly=true;f.elements.costOfGoods.required=false;f.elements.quantity.value=1;f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();};
-openEditSale=function(id){legacyOpenEditSale(id);if(!ready||saving)return;const s=data.sales.find(s=>s.id===id);if(!s)return;const f=document.getElementById('saleForm');f.elements.quantity.value=s.quantity;f.elements.quantity.readOnly=true;f.elements.pricePerItem.value=s.pricePerItem;f.elements.costOfGoods.readOnly=false;f.elements.costOfGoods.required=!s.purchaseCostPending;f.elements.costOfGoods.value=s.purchaseCostPending?'':costPerUnitDisplay(Number(s.purchaseCostAllocated??(Number(data.items.find(i=>i.id===s.itemId)?.cost||0)*s.quantity/Number(data.items.find(i=>i.id===s.itemId)?.quantity||1))),s.quantity);refreshSaleCalculation();};
+openSale=function(id=null){salePriceSource='unit';legacyOpenSale(id);if(!ready||saving)return;const f=document.getElementById('saleForm');f.elements.quantity.readOnly=false;f.elements.costOfGoods.readOnly=true;f.elements.costOfGoods.required=false;f.elements.quantity.value=1;f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();};
+openEditSale=function(id){salePriceSource='total';legacyOpenEditSale(id);if(!ready||saving)return;const s=data.sales.find(s=>s.id===id);if(!s)return;const f=document.getElementById('saleForm');f.elements.quantity.value=s.quantity;f.elements.quantity.readOnly=true;f.elements.pricePerItem.value=s.pricePerItem;f.elements.salePrice.value=Number(s.salePrice).toFixed(2);f.elements.costOfGoods.readOnly=false;f.elements.costOfGoods.required=!s.purchaseCostPending;f.elements.costOfGoods.value=s.purchaseCostPending?'':costPerUnitDisplay(Number(s.purchaseCostAllocated??(Number(data.items.find(i=>i.id===s.itemId)?.cost||0)*s.quantity/Number(data.items.find(i=>i.id===s.itemId)?.quantity||1))),s.quantity);refreshSaleCalculation();};
 async function handleQuantitySaleSubmit(e){
  e.preventDefault();if(!ready||saving)return;const f=e.currentTarget,b=f.querySelector('button[type="submit"]');b.disabled=true;let confirmed=false;
- try{const v=Object.fromEntries(new FormData(f).entries()),old=data.sales.find(s=>s.id===editingSaleId);const changes=validateSaleChanges({...v,salePrice:quantityTotal(v.quantity,v.pricePerItem)});changes.quantity=Number(v.quantity);changes.pricePerItem=Number(v.pricePerItem);if(old&&changes.quantity!==old.quantity)throw Error('Existing quantity cannot be changed');if(old&&changes.pricePerItem===old.pricePerItem)changes.salePrice=old.salePrice;
+ try{const v=Object.fromEntries(new FormData(f).entries()),old=data.sales.find(s=>s.id===editingSaleId);const amounts=saleAmountValues(v.quantity,v.pricePerItem,v.salePrice,salePriceSource);const changes={...validateSaleChanges({...v,salePrice:amounts.salePrice}),...amounts};if(old&&changes.quantity!==old.quantity)throw Error('Existing quantity cannot be changed');
  const itemId=old?.itemId||v.itemId,item=data.items.find(i=>i.id===itemId);if(!old&&(!item||item.quantityRemaining==null||changes.quantity>item.quantityRemaining))throw Error('Insufficient stock; refresh inventory');saving=true;editable(false);
- if(old){changes.costOfGoods=costPerUnitTotal(v.costOfGoods,changes.quantity,old.purchaseCostPending,saleCOGInfo(item,old,changes.quantity,data.sales).total);await request('/rest/v1/rpc/reseller_edit_sale_cog_v1',{method:'POST',body:JSON.stringify({p_sale_id:old.id,p_inventory_id:itemId,p_expected_sale:rawSales.get(old.id),p_expected_inventory:rawItems.get(itemId),p_changes:changes})});}
- else await request('/rest/v1/rpc/reseller_quantity_sale_v1',{method:'POST',body:JSON.stringify({p_sale_id:uid(),p_inventory_id:itemId,p_expected_sale:null,p_expected_inventory:rawItems.get(itemId),p_changes:changes})});
+ if(old)changes.costOfGoods=costPerUnitTotal(v.costOfGoods,changes.quantity,old.purchaseCostPending,saleCOGInfo(item,old,changes.quantity,data.sales).total);
+ await request('/rest/v1/rpc/reseller_save_sale_total_v1',{method:'POST',body:JSON.stringify({p_sale_id:old?.id||uid(),p_inventory_id:itemId,p_expected_sale:old?rawSales.get(old.id):null,p_expected_inventory:rawItems.get(itemId),p_changes:changes})});
  confirmed=true;if(inventorySaleActive){document.getElementById('itemDialog').close();inventorySaleActive=false;}document.getElementById('saleDialog').close();editingSaleId=null;await refreshSavedCostItem(itemId);toast('Sale saved');
  }catch(err){ready=false;alert((confirmed?'Sale saved, but refresh failed: ':'Could not confirm sale: ')+err.message+' Refresh before trying again.');}
  finally{saving=false;b.disabled=false;editable(ready);}
@@ -691,7 +700,7 @@ function costPerUnitTotal(value,quantity,allowUnknown=false,originalTotal=null){
 function editSaleCOG(value,allowUnknown=false){const text=String(value??'').trim();if(!text){if(allowUnknown)return null;throw Error('Enter Cost of Goods, including 0 for an actual zero');}const cents=salesMoney(text);if(cents<0)throw Error('Cost of Goods must be zero or greater');return cents/100;}
 
 document.getElementById('saleForm').addEventListener('input',refreshSaleCalculation);
-document.getElementById('saleItemSelect').addEventListener('change',()=>{if(!editingSaleId){const f=document.getElementById('saleForm');f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();}});
+document.getElementById('saleItemSelect').addEventListener('change',()=>{if(!editingSaleId){salePriceSource='unit';const f=document.getElementById('saleForm');f.elements.pricePerItem.value=data.items.find(i=>i.id===f.elements.itemId.value)?.expectedPrice??'';refreshSaleCalculation();}});
 
 
 function stockLocked(item,sales){return !!item&&(sales.some(s=>s.itemId===item.id)||item.quantityRemaining==null||item.quantityRemaining!==item.quantity);}
