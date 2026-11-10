@@ -32,7 +32,8 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
 .topbar>.action-row,.topbar>div>.action-row{margin:12px 0 0;gap:8px}
 .topbar .action-row>*{white-space:nowrap}
 @media(max-width:860px){.topbar{position:sticky;top:0}.topbar .action-row{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:8px;scrollbar-width:thin}.topbar .action-row>*{flex:0 0 auto}.topbar h1{font-size:1.5rem}}
-  .inventory-columns,.inventory-row{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(105px,auto) minmax(135px,auto);align-items:center;gap:12px}
+  #inventoryList{grid-template-columns:minmax(0,1fr)}
+  .inventory-columns,.inventory-row{display:grid;grid-template-columns:64px minmax(0,1fr) 120px 145px;align-items:center;gap:12px}
   .inventory-columns{padding:0 13px 4px;color:#a9b6c8;font-size:.78rem;font-weight:700}
   .inventory-columns .inventory-item-heading{grid-column:1 / 3}
   .inventory-row .item-side{text-align:left}
