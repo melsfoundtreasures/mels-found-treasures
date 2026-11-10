@@ -40,7 +40,8 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
   .inventory-market{display:grid;justify-items:start;gap:4px}
   .inventory-market button{font-size:.82rem;padding:6px 10px}
   .inventory-market a{font-size:.82rem;color:#93c5fd}
-  .inventory-market small{color:#a9b6c8}
+  .inventory-market small{color:#a9b6c8;font-weight:650}
+  .inventory-market small[data-listed="true"]{color:#86efac}
   .inventory-item-name{display:block;max-width:100%;padding:0;text-align:left;color:inherit;background:none;border:0;border-radius:2px;font:inherit}
   @media(max-width:720px){
     .inventory-columns{display:none}
@@ -546,7 +547,11 @@ const etsyInventoryStatus=new Map();
 function setInventoryEtsyStatus(id,label){
   etsyInventoryStatus.set(id,label);
   const row=[...document.querySelectorAll('#inventoryList .inventory-row')].find(element=>element.dataset.id===id);
-  if(row)row.querySelector('[data-etsy-row-status]').textContent=label;
+  if(row){
+    const status=row.querySelector('[data-etsy-row-status]');
+    status.textContent=label;
+    status.dataset.listed=String(label==='Listed');
+  }
 }
 function renderInventory(){
   updateInventoryViewLabels();
@@ -557,14 +562,17 @@ function renderInventory(){
     const st=calcSellThrough(i), age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate), projected=expectedNet(i);
     const savedItem=rawItems.get(i.id);
     const ebayId=String((savedItem && ebayListingId(savedItem)) || '');
+    const ebayLinked=/^\d{9,16}$/.test(ebayId);
+    const ebayListed=i.status==='listed' && (ebayLinked || String(i.marketplace).toLowerCase()==='ebay');
+    const etsyStatus=etsyInventoryStatus.get(i.id)||'—';
     return `<article class="item-card inventory-row" data-id="${i.id}">
       <div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div>
       <div class="item-main"><h3><button type="button" class="inventory-item-name">${escapeHtml(i.title||'Untitled item')}</button></h3>
         <div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div>
       </div>
       <div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div>
-      <div class="inventory-market"><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button><small data-etsy-row-status>${escapeHtml(etsyInventoryStatus.get(i.id)||'Open to check status')}</small></div>
-      <div class="inventory-market inventory-market-ebay">${/^\d{9,16}$/.test(ebayId)?`<a href="https://www.ebay.com/itm/${ebayId}" target="_blank" rel="noopener noreferrer" data-open-ebay>View on eBay</a><small>Saved listing</small>`:'<small>No eBay link saved</small>'}</div>
+      <div class="inventory-market"><small data-etsy-row-status data-listed="${etsyStatus==='Listed'}" title="Status of the linked Etsy listing">${escapeHtml(etsyStatus)}</small><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button></div>
+      <div class="inventory-market inventory-market-ebay"><small data-listed="${ebayListed}" title="Based on the status saved in Reseller">${ebayListed?'Listed':'Not listed'}</small>${ebayLinked?`<a href="https://www.ebay.com/itm/${ebayId}" target="_blank" rel="noopener noreferrer" data-open-ebay>View on eBay</a>`:''}</div>
     </article>`;
   }).join('');
   list.querySelectorAll('.inventory-row').forEach(row=>{
@@ -1106,6 +1114,6 @@ handlePlatformListingFile=async function(file){
 
 </script>
 <script src="./etsy-connect.js"></script>
-<script src="./etsy-listings.js?v=bulk-match"></script>
+<script src="./etsy-listings.js?v=bulk-match-status"></script>
 </body>
 </html>

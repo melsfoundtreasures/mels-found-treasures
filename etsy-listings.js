@@ -43,16 +43,31 @@
     return result;
   }
 
+  let statusCheckAt = 0;
+  const originalRender = renderInventory;
+  renderInventory = function () {
+    originalRender();
+    if (!session || !data.items.length || Date.now() - statusCheckAt < 60_000) return;
+    statusCheckAt = Date.now();
+    requestEtsyListing({ action: "listing-statuses" }).then(result => {
+      const states = new Map(result.statuses.map(row => [row.inventoryId, row.listed]));
+      for (const item of data.items) setInventoryEtsyStatus(item.id, states.get(item.id) ? "Listed" : "Not listed");
+    }).catch(() => {
+      // Leave the last known status visible when the marketplace cannot be reached.
+    });
+  };
+  renderInventory();
+
   function show(current) {
     listing = current;
     field("link").hidden = Boolean(current);
     field("manage").hidden = !current;
     if (!current) {
       status.textContent = "No Etsy listing linked. Link an existing listing or draft.";
-      if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, "Unlinked");
+      if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, "Not listed");
       return;
     }
-    if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, labels[current.state] || "Review in Etsy");
+    if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, current.state === "active" ? "Listed" : "Not listed");
     status.textContent = (labels[current.state] || "Review in Etsy") + " · " + current.title + " (#" + current.id + ")";
     field("tags").textContent = current.tags.length ? "Tags · " + current.tags.join(", ") : "No Etsy tags";
     field("publish").hidden = !["draft", "inactive", "edit"].includes(current.state);
@@ -171,7 +186,7 @@
     message.textContent = "Saving the selected links…";
     try {
       const result = await requestEtsyListing({ action: "listing-match-save", matches });
-      for (const match of result.matches) setInventoryEtsyStatus(match.inventoryId, labels[match.state] || "Review in Etsy");
+      for (const match of result.matches) setInventoryEtsyStatus(match.inventoryId, match.state === "active" ? "Listed" : "Not listed");
       rows.replaceChildren();
       message.textContent = "Linked " + result.linked + " Etsy listings.";
     } catch (error) {
