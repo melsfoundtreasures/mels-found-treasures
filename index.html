@@ -33,19 +33,21 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
 .topbar .action-row>*{white-space:nowrap}
 @media(max-width:860px){.topbar{position:sticky;top:0}.topbar .action-row{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:8px;scrollbar-width:thin}.topbar .action-row>*{flex:0 0 auto}.topbar h1{font-size:1.5rem}}
   #inventoryList{grid-template-columns:minmax(0,1fr)}
-  .inventory-columns,.inventory-row{display:grid;grid-template-columns:64px minmax(0,1fr) 120px 145px;align-items:center;gap:12px}
+  .inventory-columns,.inventory-row{display:grid;grid-template-columns:64px minmax(0,1fr) 120px 145px 125px;align-items:center;gap:12px}
   .inventory-columns{padding:0 13px 4px;color:#a9b6c8;font-size:.78rem;font-weight:700}
   .inventory-columns .inventory-item-heading{grid-column:1 / 3}
   .inventory-row .item-side{text-align:left}
   .inventory-market{display:grid;justify-items:start;gap:4px}
   .inventory-market button{font-size:.82rem;padding:6px 10px}
+  .inventory-market a{font-size:.82rem;color:#93c5fd}
   .inventory-market small{color:#a9b6c8}
   .inventory-item-name{display:block;max-width:100%;padding:0;text-align:left;color:inherit;background:none;border:0;border-radius:2px;font:inherit}
-  @media(max-width:620px){
+  @media(max-width:720px){
     .inventory-columns{display:none}
     .inventory-row{grid-template-columns:54px minmax(0,1fr) auto}
-    .inventory-row .item-side{grid-column:2;text-align:left}
-    .inventory-market{grid-column:3;grid-row:2}
+    .inventory-row .item-side{grid-column:3;grid-row:1;text-align:left}
+    .inventory-market{grid-column:2;grid-row:2}
+    .inventory-market-ebay{grid-column:3}
   }
 </style>
 </head>
@@ -551,8 +553,10 @@ function renderInventory(){
   const arr=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
   if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
   if(!arr.length){list.innerHTML='<div class="empty-state">'+(inventoryFullView?'No items match this filter.':'No listed items yet. Select Inventory to see unsold stock.')+'</div>';return;}
-  list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Inventory item</span><span>Asking price</span><span>Etsy</span></div>'+arr.map(i=>{
+  list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Inventory item</span><span>Asking price</span><span>Etsy</span><span>eBay</span></div>'+arr.map(i=>{
     const st=calcSellThrough(i), age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate), projected=expectedNet(i);
+    const savedItem=rawItems.get(i.id);
+    const ebayId=String((savedItem && ebayListingId(savedItem)) || '');
     return `<article class="item-card inventory-row" data-id="${i.id}">
       <div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div>
       <div class="item-main"><h3><button type="button" class="inventory-item-name">${escapeHtml(i.title||'Untitled item')}</button></h3>
@@ -560,10 +564,12 @@ function renderInventory(){
       </div>
       <div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div>
       <div class="inventory-market"><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button><small data-etsy-row-status>${escapeHtml(etsyInventoryStatus.get(i.id)||'Open to check status')}</small></div>
+      <div class="inventory-market inventory-market-ebay">${/^\d{9,16}$/.test(ebayId)?`<a href="https://www.ebay.com/itm/${ebayId}" target="_blank" rel="noopener noreferrer" data-open-ebay>View on eBay</a><small>Saved listing</small>`:'<small>No eBay link saved</small>'}</div>
     </article>`;
   }).join('');
   list.querySelectorAll('.inventory-row').forEach(row=>{
     row.onclick=()=>openItem(row.dataset.id);
+    row.querySelector('[data-open-ebay]')?.addEventListener('click',event=>event.stopPropagation());
     row.querySelector('[data-manage-etsy]').onclick=async event=>{
       event.stopPropagation();
       await openItem(row.dataset.id);
