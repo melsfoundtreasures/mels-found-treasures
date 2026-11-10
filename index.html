@@ -43,12 +43,44 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
   .inventory-market small{color:#a9b6c8;font-weight:650}
   .inventory-market small[data-listed="true"]{color:#86efac}
   .inventory-item-name{display:block;max-width:100%;padding:0;text-align:left;color:inherit;background:none;border:0;border-radius:2px;font:inherit}
+  .inventory-cost{display:none}
   @media(max-width:720px){
     .inventory-columns{display:none}
     .inventory-row{grid-template-columns:54px minmax(0,1fr) auto}
     .inventory-row .item-side{grid-column:3;grid-row:1;text-align:left}
     .inventory-market{grid-column:2;grid-row:2}
     .inventory-market-ebay{grid-column:3}
+  }
+  .inventory-table-view{background:#fff;color:#20262c;border-color:#dce1e5;box-shadow:none}
+  .inventory-table-view .panel-head{padding-bottom:12px;border-bottom:1px solid #e3e7ea}
+  .inventory-table-view .panel-head h2 button{padding:3px 0;border:0;background:transparent;color:#136d61}
+  .inventory-table-view .panel-head .muted,.inventory-table-view .empty-state{color:#59636d}
+  .inventory-table-view .toolbar{flex:1 1 420px;display:flex;flex-wrap:wrap;gap:8px}
+  .inventory-table-view .toolbar input{flex:1 1 160px;min-width:0}
+  .inventory-table-view .toolbar input,.inventory-table-view .toolbar select,.inventory-table-view button.secondary{background:#fff;color:#26313a;border:1px solid #d3dade}
+  .inventory-table-view .toolbar button.secondary{color:#116458;border-color:#9ecbc4}
+  #inventoryTable.inventory-table-view #inventoryList{gap:0;border:1px solid #e0e5e8;border-radius:6px;overflow:hidden}
+  .inventory-table-view .inventory-columns,.inventory-table-view .inventory-row{grid-template-columns:44px minmax(0,1fr) 112px 122px 122px;gap:0;padding:0 10px}
+  .inventory-table-view .inventory-columns{background:#f1f4f5;color:#38464d;border-bottom:1px solid #dce2e6}
+  .inventory-table-view .inventory-columns span{padding:9px 12px}
+  .inventory-table-view .inventory-row{min-height:64px;border:0;border-radius:0;background:#fff;border-bottom:1px solid #e6eaed}
+  .inventory-table-view .inventory-row:last-child{border-bottom:0}
+  .inventory-table-view .inventory-row:hover,.inventory-table-view .inventory-row:focus-within{background:#f5faf9}
+  .inventory-table-view .inventory-row .thumb{width:40px;height:40px;border-radius:5px;background:#f2f4f5;color:#59636d;font-size:.58rem}
+  .inventory-table-view .inventory-row .item-main,.inventory-table-view .inventory-row .item-side,.inventory-table-view .inventory-market{padding:8px 12px}
+  .inventory-table-view .inventory-row .item-main h3,.inventory-table-view .inventory-row .price{font-size:.86rem;color:#20262c}
+  .inventory-table-view .inventory-row .meta,.inventory-table-view .inventory-market small{font-size:.75rem;color:#59636d}
+  .inventory-table-view .inventory-row .meta .badge,.inventory-table-view .inventory-age,.inventory-table-view .inventory-projected{display:none}
+  .inventory-table-view .inventory-cost{display:inline}
+  .inventory-table-view .inventory-market{align-self:stretch;align-content:center;border-left:1px solid #e6eaed}
+  .inventory-table-view .inventory-market small[data-listed="true"]{padding:2px 7px;border-radius:20px;background:#def2eb;color:#166654}
+  .inventory-table-view .inventory-market button,.inventory-table-view .inventory-market a{padding:0;background:none;border:0;color:#116458;font-size:.73rem;text-decoration:underline}
+  @media(max-width:720px){
+    .inventory-table-view .inventory-columns{display:none}
+    .inventory-table-view .inventory-row{grid-template-columns:44px minmax(0,1fr) minmax(90px,auto);padding:6px 10px}
+    .inventory-table-view .inventory-market{border-left:0;grid-column:3}
+    .inventory-table-view .inventory-market-ebay{grid-column:2}
+    .inventory-table-view .inventory-market::before{content:attr(data-marketplace);color:#303b43;font-size:.72rem;font-weight:700}
   }
 </style>
 </head>
@@ -89,7 +121,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       </article>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="inventoryTable">
       <div class="panel-head wrap">
         <div><h2><button id="inventoryViewBtn" class="ghost" type="button" style="font:inherit">Inventory</button></h2><p id="inventoryViewHint" class="muted"></p></div><button id="inventoryHomeBtn" class="secondary hidden" type="button">Back to home</button>
         <div class="toolbar">
@@ -558,7 +590,7 @@ function renderInventory(){
   const arr=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
   if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
   if(!arr.length){list.innerHTML='<div class="empty-state">'+(inventoryFullView?'No items match this filter.':'No listed items yet. Select Inventory to see unsold stock.')+'</div>';return;}
-  list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Inventory item</span><span>Asking price</span><span>Etsy</span><span>eBay</span></div>'+arr.map(i=>{
+  list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Item name</span><span>Asking price</span><span>eBay</span><span>Etsy</span></div>'+arr.map(i=>{
     const st=calcSellThrough(i), age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate), projected=expectedNet(i);
     const savedItem=rawItems.get(i.id);
     const ebayId=String((savedItem && ebayListingId(savedItem)) || '');
@@ -568,11 +600,11 @@ function renderInventory(){
     return `<article class="item-card inventory-row" data-id="${i.id}">
       <div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div>
       <div class="item-main"><h3><button type="button" class="inventory-item-name">${escapeHtml(i.title||'Untitled item')}</button></h3>
-        <div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div>
+        <div class="meta"><span class="badge ${i.status}">${i.status}</span>${savedItem?.purchase_price!=null?`<span class="inventory-cost">Cost ${money(i.cost)}</span>`:''}${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span class="inventory-age">${age} days</span>${st!==null?`<span class="inventory-age">ST ${st}%</span>`:''}</div>
       </div>
-      <div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div>
-      <div class="inventory-market"><small data-etsy-row-status data-listed="${etsyStatus==='Listed'}" title="Status of the linked Etsy listing">${escapeHtml(etsyStatus)}</small><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button></div>
-      <div class="inventory-market inventory-market-ebay"><small data-listed="${ebayListed}" title="Based on the status saved in Reseller">${ebayListed?'Listed':'Not listed'}</small>${ebayLinked?`<a href="https://www.ebay.com/itm/${ebayId}" target="_blank" rel="noopener noreferrer" data-open-ebay>View on eBay</a>`:''}</div>
+      <div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="inventory-projected ${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div>
+      <div class="inventory-market inventory-market-ebay" data-marketplace="eBay"><small data-listed="${ebayListed}" title="Based on the status saved in Reseller">${ebayListed?'Listed':'Not listed'}</small>${ebayLinked?`<a href="https://www.ebay.com/itm/${ebayId}" target="_blank" rel="noopener noreferrer" data-open-ebay>View on eBay</a>`:''}</div>
+      <div class="inventory-market" data-marketplace="Etsy"><small data-etsy-row-status data-listed="${etsyStatus==='Listed'}" title="Status of the linked Etsy listing">${escapeHtml(etsyStatus)}</small><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button></div>
     </article>`;
   }).join('');
   list.querySelectorAll('.inventory-row').forEach(row=>{
@@ -1047,6 +1079,7 @@ function latestListedItems(items){
  return items.filter(item=>item.status==='listed').sort((a,b)=>timestamp(b)-timestamp(a)||(Date.parse(b.createdAt||'')||0)-(Date.parse(a.createdAt||'')||0)||String(a.id).localeCompare(String(b.id))).slice(0,6);
 }
 function updateInventoryViewLabels(){
+ document.getElementById('inventoryTable').classList.toggle('inventory-table-view',inventoryFullView);
  document.getElementById('inventoryViewBtn').textContent='Inventory ('+data.items.filter(i=>i.status!=='sold').length+')';
  document.getElementById('inventoryHomeBtn').classList.toggle('hidden',!inventoryFullView);
  document.getElementById('inventoryViewHint').textContent=inventoryFullView?(activeFilter==='sold'?'Sold items. Open an item to view it or add stock.':'Listed and Unlisted inventory. Sold items are in Sales or the Sold filter.'):'The six most recently listed items. Select Inventory to see all unsold stock.';
