@@ -32,6 +32,20 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
 .topbar>.action-row,.topbar>div>.action-row{margin:12px 0 0;gap:8px}
 .topbar .action-row>*{white-space:nowrap}
 @media(max-width:860px){.topbar{position:sticky;top:0}.topbar .action-row{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:8px;scrollbar-width:thin}.topbar .action-row>*{flex:0 0 auto}.topbar h1{font-size:1.5rem}}
+  .inventory-columns,.inventory-row{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(105px,auto) minmax(135px,auto);align-items:center;gap:12px}
+  .inventory-columns{padding:0 13px 4px;color:#a9b6c8;font-size:.78rem;font-weight:700}
+  .inventory-columns .inventory-item-heading{grid-column:1 / 3}
+  .inventory-row .item-side{text-align:left}
+  .inventory-market{display:grid;justify-items:start;gap:4px}
+  .inventory-market button{font-size:.82rem;padding:6px 10px}
+  .inventory-market small{color:#a9b6c8}
+  .inventory-item-name{display:block;max-width:100%;padding:0;text-align:left;color:inherit;background:none;border:0;border-radius:2px;font:inherit}
+  @media(max-width:620px){
+    .inventory-columns{display:none}
+    .inventory-row{grid-template-columns:54px minmax(0,1fr) auto}
+    .inventory-row .item-side{grid-column:2;text-align:left}
+    .inventory-market{grid-column:3;grid-row:2}
+  }
 </style>
 </head>
 <body>
@@ -525,13 +539,40 @@ function filteredItems(){
   return arr;
 }
 let inventoryFullView=false;
+const etsyInventoryStatus=new Map();
+function setInventoryEtsyStatus(id,label){
+  etsyInventoryStatus.set(id,label);
+  const row=[...document.querySelectorAll('#inventoryList .inventory-row')].find(element=>element.dataset.id===id);
+  if(row)row.querySelector('[data-etsy-row-status]').textContent=label;
+}
 function renderInventory(){
   updateInventoryViewLabels();
   const arr=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
   if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
   if(!arr.length){list.innerHTML='<div class="empty-state">'+(inventoryFullView?'No items match this filter.':'No listed items yet. Select Inventory to see unsold stock.')+'</div>';return;}
-  list.innerHTML=arr.map(i=>{const st=calcSellThrough(i);const age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate);const projected=expectedNet(i);return `<article class="item-card" data-id="${i.id}"><div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div><div class="item-main"><h3>${escapeHtml(i.title||'Untitled item')}</h3><div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div></div><div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div></article>`}).join('');
-  document.querySelectorAll('.item-card').forEach(el=>el.onclick=()=>openItem(el.dataset.id));
+  list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Inventory item</span><span>Asking price</span><span>Etsy</span></div>'+arr.map(i=>{
+    const st=calcSellThrough(i), age=i.listingDate?daysBetween(i.listingDate):daysBetween(i.purchaseDate), projected=expectedNet(i);
+    return `<article class="item-card inventory-row" data-id="${i.id}">
+      <div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div>
+      <div class="item-main"><h3><button type="button" class="inventory-item-name">${escapeHtml(i.title||'Untitled item')}</button></h3>
+        <div class="meta"><span class="badge ${i.status}">${i.status}</span>${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span>${age} days</span>${st!==null?`<span>ST ${st}%</span>`:''}</div>
+      </div>
+      <div class="item-side"><div class="price">${money(i.expectedPrice)}</div><div class="${projected>=0?'profit':'loss'}">Proj. ${money(projected)} net</div></div>
+      <div class="inventory-market"><button type="button" class="secondary" data-manage-etsy>Manage Etsy</button><small data-etsy-row-status>${escapeHtml(etsyInventoryStatus.get(i.id)||'Open to check status')}</small></div>
+    </article>`;
+  }).join('');
+  list.querySelectorAll('.inventory-row').forEach(row=>{
+    row.onclick=()=>openItem(row.dataset.id);
+    row.querySelector('[data-manage-etsy]').onclick=async event=>{
+      event.stopPropagation();
+      await openItem(row.dataset.id);
+      const panel=document.getElementById('etsyListingPanel');
+      if(panel && !panel.hidden && editingId===row.dataset.id && panel.closest('dialog').open){
+        panel.scrollIntoView({block:'nearest'});
+        panel.focus({preventScroll:true});
+      }
+    };
+  });
 }
 function populateSaleSelect(selectedItemId=null){const sel=document.getElementById('saleItemSelect');const candidates=data.items.filter(i=>i.status!=='sold'||i.id===selectedItemId);sel.innerHTML=candidates.length?candidates.map(i=>`<option value="${i.id}">${escapeHtml(i.title)} · ${money(i.expectedPrice)}</option>`).join(''):'<option value="">No unsold items</option>';if(selectedItemId&&candidates.some(i=>i.id===selectedItemId))sel.value=selectedItemId;}
 
@@ -1058,6 +1099,6 @@ handlePlatformListingFile=async function(file){
 
 </script>
 <script src="./etsy-connect.js"></script>
-<script src="./etsy-listings.js"></script>
+<script src="./etsy-listings.js?v=inventory-layout"></script>
 </body>
 </html>

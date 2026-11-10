@@ -1,6 +1,8 @@
 (() => {
   const form = document.getElementById("itemForm");
   const panel = document.createElement("section");
+  panel.id = "etsyListingPanel";
+  panel.tabIndex = -1;
   panel.hidden = true;
   panel.innerHTML = `
     <h3>Etsy listing</h3>
@@ -34,9 +36,11 @@
     field("manage").hidden = !current;
     if (!current) {
       status.textContent = "No Etsy listing linked. Link an existing listing or draft.";
+      if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, "Unlinked");
       return;
     }
     const labels = { active: "Listed", draft: "Draft", inactive: "Delisted", edit: "Delisted", sold_out: "Sold out", expired: "Expired" };
+    if (typeof setInventoryEtsyStatus === "function") setInventoryEtsyStatus(itemId, labels[current.state] || "Review in Etsy");
     status.textContent = (labels[current.state] || "Review in Etsy") + " · " + current.title + " (#" + current.id + ")";
     field("tags").textContent = current.tags.length ? "Tags · " + current.tags.join(", ") : "No Etsy tags";
     field("publish").hidden = !["draft", "inactive", "edit"].includes(current.state);
@@ -94,6 +98,6 @@
     await openInventoryItem(id);
     if (opened !== version || !id || !data.items.some(item => item.id === id)) return;
     panel.hidden = false;
-    await run("listing-view");
+    void run("listing-view");
   };
 })();
