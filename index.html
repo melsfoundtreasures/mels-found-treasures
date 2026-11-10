@@ -82,6 +82,31 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     .inventory-table-view .inventory-market-ebay{grid-column:2}
     .inventory-table-view .inventory-market::before{content:attr(data-marketplace);color:#303b43;font-size:.72rem;font-weight:700}
   }
+  body:has(#itemDialog[open]){background:#fff}
+  body:has(#itemDialog[open])>.topbar,body:has(#itemDialog[open])>.shell{display:none}
+  #itemDialog{position:static;width:100%;max-width:none;min-height:100dvh;max-height:none;margin:0;padding:0;overflow:visible;border:0;border-radius:0;background:#fff;color:#20262c;box-shadow:none}
+  #itemDialog form{display:grid;grid-template-columns:208px minmax(0,1fr);align-items:start;min-height:100dvh;padding:0}
+  .item-page-sidebar{position:sticky;top:0;display:grid;align-content:start;gap:12px;min-height:100dvh;padding:22px 16px;background:#f5f7f7;border-right:1px solid #e2e8e8}
+  .item-page-sidebar nav{display:grid;gap:2px;border-block:1px solid #dce4e4;padding:12px 0}
+  .item-page-sidebar nav a{padding:8px;color:#23534d;text-decoration:none;border-radius:4px}
+  .item-page-sidebar nav a:hover{background:#e1efeb}
+  .item-page-sidebar .primary{background:#12786b;color:#fff;border:1px solid #12786b}
+  #itemDialog .item-page-sidebar .ghost,#itemDialog .item-page-sidebar .secondary{background:#fff;color:#36454e;border:1px solid #d3dbdf}
+  #itemDialog .item-page-sidebar .danger{color:#a72e36}
+  .item-page-content{width:min(100%,1050px);margin:0 auto;padding:32px clamp(18px,4vw,54px) 48px}
+  .item-page-content .eyebrow{color:#14695d}
+  .item-page-content .muted,.item-page-content small{color:#55636b}
+  .item-page-content input,.item-page-content select,.item-page-content textarea,.item-page-content .secondary,.item-page-content .ghost{background:#fff;color:#26323b;border:1px solid #ccd6da}
+  .item-page-content .photo-section,.item-page-content .form-grid,.item-page-content #etsyListingPanel{padding:16px;margin:0 0 22px;border:1px solid #dce4e6;border-radius:7px;background:#f9fbfb}
+  .item-page-content #etsyListingPanel a{color:#14695d}
+  .item-page-content .item-section-heading{margin:0 0 8px;font-size:1rem}
+  .item-page-content section,.item-page-content h3,.item-page-content label{scroll-margin-top:16px}
+  @media(max-width:700px){
+    #itemDialog form{grid-template-columns:1fr}
+    .item-page-sidebar{position:static;grid-template-columns:1fr 1fr;min-height:0;padding:12px;border-right:0;border-bottom:1px solid #e2e8e8}
+    .item-page-sidebar nav{grid-column:1 / -1;display:flex;flex-wrap:wrap;padding:4px 0}
+    .item-page-content{padding:20px 14px 36px}
+  }
 </style>
 </head>
 <body>
@@ -150,14 +175,25 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     </section>
   </main>
 
-  <dialog id="itemDialog" class="modal">
-    <form method="dialog" id="itemForm">
+  <dialog id="itemDialog" aria-labelledby="itemDialogTitle">
+    <form id="itemForm">
+      <aside class="item-page-sidebar" aria-label="Item editor toolbar">
+        <button type="button" id="backToInventoryBtn" class="secondary">← Back to inventory</button>
+        <nav aria-label="Item sections">
+          <a href="#itemPhotos" data-item-section="itemPhotos">Photos</a>
+          <a href="#itemDetails" data-item-section="itemDetails">Item details</a>
+          <a href="#etsyListingPanel" data-item-section="etsyListingPanel" id="itemPageEtsyNav">Etsy listing</a>
+          <a href="#itemNotes" data-item-section="itemNotes">Notes</a>
+        </nav>
+        <button type="submit" class="primary">Save Item</button>
+        <button type="button" id="deleteItemBtn" class="danger ghost hidden">Delete Item</button>
+      </aside>
+      <div class="item-page-content">
       <div class="modal-head">
-        <div><div class="eyebrow">INVENTORY ITEM</div><h2 id="itemDialogTitle">Add Item</h2></div>
-        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="icon-btn" aria-label="Close">✕</button>
+        <div><div class="eyebrow">INVENTORY ITEM</div><h2 id="itemDialogTitle" tabindex="-1">Add Item</h2></div>
       </div>
 
-      <div class="photo-section">
+      <div class="photo-section" id="itemPhotos">
         <div class="photo-section-head">
           <div>
             <strong>Item photos</strong>
@@ -172,6 +208,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
         </div>
       </div>
 
+      <h3 class="item-section-heading" id="itemDetails">Item details</h3>
       <div class="form-grid">
         <label>Item title<input name="title" required placeholder="e.g. HP 410X Black Toner" /></label>
         <label>SKU<input name="sku" placeholder="e.g. BIN-A12-004" /></label>
@@ -192,13 +229,8 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
         </label>
         <div><label for="itemStatusSelect">Status</label><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><select name="status" id="itemStatusSelect" style="flex:1;min-width:120px"><option value="unlisted">Unlisted</option><option value="listed">Listed</option><option value="sold">Sold</option></select><button type="button" id="inventoryRecordSaleBtn" class="primary" style="flex:0 0 auto">Record Sale</button><button type="button" id="inventoryAddStockBtn" class="secondary" style="flex:0 0 auto">Add Stock</button></div><small id="inventoryRecordSaleHint">Record Sale opens the sale window directly using saved inventory details. Save other item edits first.</small></div>
       </div>
-      <label>Notes<textarea name="notes" rows="3" placeholder="Condition, flaws, bundle notes, comp observations..."></textarea></label>
+      <label id="itemNotes">Notes<textarea name="notes" rows="3" placeholder="Condition, flaws, bundle notes, comp observations..."></textarea></label>
       <input type="hidden" name="id" />
-      <div class="modal-actions">
-        <button type="button" id="deleteItemBtn" class="danger ghost hidden">Delete</button>
-        <span class="grow"></span>
-        <button type="button" onclick="this.closest('dialog').close()" value="cancel" class="secondary">Cancel</button>
-        <button type="submit" class="primary">Save Item</button>
       </div>
     </form>
   </dialog>
@@ -329,6 +361,7 @@ async function syncFromDrive(){
   if(typeof loadStoredPhotos==='function')await loadStoredPhotos();
   baseline=deep(data);ready=true;render();editable(true);
   setDriveStatus(`Supabase · ${data.items.length} items · ${data.sales.length} sales`,'synced');
+  syncItemPageRoute();
  }catch(e){setDriveStatus(e.message,'error');throw e;}
 }
 async function save(){
@@ -634,11 +667,51 @@ async function openItem(id=null){
   let item=null;
   if(id){item=data.items.find(x=>x.id===id);if(!item)return;Object.keys(item).forEach(k=>{if(f.elements[k]&&k!=='photo'&&k!=='photos'&&k!=='photoIds')f.elements[k].value=item[k]??''});f.id.value=id;}
   setupStockFields(item);setupInventorySaleButton(item);document.getElementById('inventoryAddStockBtn').disabled=!item||!Number.isSafeInteger(item.quantityRemaining)||item.quantityRemaining<0;
-  d.showModal();showStoredGallery(item);
+  document.getElementById('itemPageEtsyNav').hidden=!id;
+  if(!d.open){
+    itemPageScroll=window.scrollY;
+    const route='#item='+(id||'new');
+    if(location.hash!==route)history.pushState({...history.state,resellerItemPage:true},'',route);
+    d.show();
+    window.scrollTo(0,0);
+    document.getElementById('itemDialogTitle').focus({preventScroll:true});
+  }
+  showStoredGallery(item);
   if(!item){renderPhotoPreview();return;}
   if(Array.isArray(item.photos)&&item.photos.length){workingPhotos=item.photos.map(src=>({id:null,data:src,thumb:''}));renderPhotoPreview();return;}
   renderPhotoPreview();
 }
+
+let itemPageScroll=0;
+const itemPage=document.getElementById('itemDialog');
+function syncItemPageRoute(){
+  const route=location.hash.match(/^#item=(new|[a-f\d-]+)$/i);
+  if(!route){if(itemPage.open)itemPage.close();return;}
+  if(!ready)return;
+  const id=route[1]==='new'?null:route[1];
+  if(id && !data.items.some(item=>item.id===id)){
+    history.replaceState(history.state,'',location.pathname+location.search);
+    toast('That inventory item is no longer available.');
+    return;
+  }
+  if(!itemPage.open || editingId!==id)void openItem(id);
+}
+window.addEventListener('popstate',syncItemPageRoute);
+itemPage.addEventListener('close',()=>{
+  if(itemPage.open)return;
+  if(location.hash.startsWith('#item=')){
+    if(history.state?.resellerItemPage)history.back();
+    else history.replaceState(history.state,'',location.pathname+location.search);
+  }
+  requestAnimationFrame(()=>{if(!itemPage.open)window.scrollTo(0,itemPageScroll);});
+});
+document.getElementById('backToInventoryBtn').onclick=()=>{if(!saving)itemPage.close();};
+itemPage.querySelector('nav').addEventListener('click',event=>{
+  const target=event.target.closest('[data-item-section]');
+  if(!target)return;
+  event.preventDefault();
+  document.getElementById(target.dataset.itemSection)?.scrollIntoView({block:'start'});
+});
 
 let restockItemId=null,restockExpected=null;
 function openRestock(){
