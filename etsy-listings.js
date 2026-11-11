@@ -271,8 +271,11 @@
     const card = document.createElement("form");
     card.style.cssText = "padding:16px;border:1px solid #536171;border-radius:8px";
     const title = document.createElement("h3");
-    title.textContent = order.blocked ? "Order #" + order.receiptId : order.title;
+    title.textContent = order.title || "Etsy order";
     card.append(title);
+    const reference = document.createElement("p");
+    reference.textContent = "Order #" + order.receiptId + (order.saleDate ? " · " + order.saleDate : "");
+    card.append(reference);
     if (order.blocked) {
       const explanation = document.createElement("p");
       explanation.textContent = order.blocked;
@@ -280,7 +283,7 @@
       return card;
     }
     const detail = document.createElement("p");
-    detail.textContent = order.saleDate + " · " + order.quantity + " unit(s) · Product revenue " + money(order.salePrice) + " · Buyer shipping " + money(order.shippingCharged);
+    detail.textContent = order.quantity + " unit(s) · Product revenue " + money(order.salePrice) + " · Buyer shipping " + money(order.shippingCharged);
     const selectLabel = document.createElement("label");
     selectLabel.textContent = "Inventory item";
     const select = document.createElement("select");
