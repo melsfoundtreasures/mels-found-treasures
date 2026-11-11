@@ -258,7 +258,7 @@
   find.after(ordersButton);
   const orders = document.createElement("dialog");
   orders.className = "modal";
-  orders.innerHTML = '<div style="padding:24px"><h2>Review Etsy sales</h2><p>Choose the matching inventory item. You can add missing expenses and purchase costs in Sales after importing.</p><p data-orders-status role="status"></p><div data-orders-rows style="display:grid;gap:20px;max-height:65vh;overflow:auto"></div><button data-orders-close class="secondary" type="button">Close</button></div>';
+  orders.innerHTML = '<div style="padding:24px"><h2>Review Etsy sales</h2><p>Choose the matching inventory item and import the sale. Reseller retrieves available Etsy expenses. You can review missing amounts in Sales.</p><p data-orders-status role="status"></p><div data-orders-rows style="display:grid;gap:20px;max-height:65vh;overflow:auto"></div><button data-orders-close class="secondary" type="button">Close</button></div>';
   document.body.append(orders);
   const ordersStatus = orders.querySelector("[data-orders-status]");
   const ordersRows = orders.querySelector("[data-orders-rows]");
@@ -296,6 +296,13 @@
     select.value = order.inventoryId ?? "";
     selectLabel.append(select);
     card.append(detail, selectLabel);
+    const expenseDetails = document.createElement("details");
+    const expenseSummary = document.createElement("summary");
+    expenseSummary.textContent = "Review expenses and purchase cost (optional)";
+    const expenseStatus = document.createElement("p");
+    expenseStatus.setAttribute("role", "status");
+    expenseDetails.append(expenseSummary, expenseStatus);
+    card.append(expenseDetails);
     const inputs = {};
     for (const [key, label] of [
       ["shippingCost", "Actual postage ($)"], ["fees", "Etsy fees ($)"],
@@ -309,9 +316,31 @@
       input.step = "0.01";
       input.placeholder = "Optional";
       fieldLabel.append(input);
-      card.append(fieldLabel);
+      expenseDetails.append(fieldLabel);
       inputs[key] = input;
     }
+    let expensesRequested = false;
+    async function loadExpenses() {
+      if (expensesRequested) return;
+      expensesRequested = true;
+      expenseStatus.textContent = "Checking Etsy for payment fees and postage…";
+      try {
+        const expenses = await requestEtsyListing({
+          action: "etsy-sales-expenses", receiptId: order.receiptId, transactionId: order.transactionId,
+        });
+        for (const key of ["fees", "shippingCost"]) {
+          if (expenses[key] != null && inputs[key].value === "") inputs[key].value = expenses[key].toFixed(2);
+        }
+        expenseStatus.textContent = expenses.fees != null && expenses.shippingCost != null
+          ? "Etsy payment fees and label postage loaded."
+          : "Amounts Etsy hasn’t provided can stay blank for review after import.";
+      } catch {
+        expensesRequested = false;
+        expenseStatus.textContent = "Expenses are unavailable right now. You can import the sale and review them later.";
+      }
+    }
+    select.addEventListener("change", () => { if (select.value) void loadExpenses(); });
+    expenseDetails.addEventListener("toggle", () => { if (expenseDetails.open) void loadExpenses(); });
     const message = document.createElement("p");
     message.setAttribute("role", "status");
     const submit = document.createElement("button");
