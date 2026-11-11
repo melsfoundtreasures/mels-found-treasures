@@ -1035,7 +1035,28 @@ elEbay('salesImportDialog').addEventListener('cancel',e=>{if(salesBusy)e.prevent
 elEbay('salesImportButton').onclick=async()=>{if(!ready||saving||salesBusy||!elEbay('salesStockConfirm').checked)return;const rows=salesPreview.filter(p=>p.paymentsMatched&&!['blocked','duplicate'].includes(p.state));if(!rows.length)return;salesBusy=true;saving=true;editable(false);elEbay('salesClose').disabled=true;elEbay('salesImportButton').disabled=true;for(const id of ['salesOrdersFile','salesPaymentsFile','salesVendooFile','salesStockConfirm'])elEbay(id).disabled=true;elEbay('salesRows').querySelectorAll('input').forEach(x=>x.disabled=true);let confirmed=false;try{elEbay('salesImportStatus').textContent='Importing historical sales… Current stock will stay unchanged.';const result=await request('/rest/v1/rpc/reseller_import_ebay_historical_sales_v1',{method:'POST',body:JSON.stringify({p_stock_confirmed:true,p_rows:rows.map(({state,reason,...p})=>p)})});confirmed=true;salesPreview=[];elEbay('salesRows').innerHTML='';elEbay('salesImportStatus').textContent='Saved '+result.added+' historical sales. '+result.skipped+' existing sales were kept unchanged. Current stock was not deducted.';}catch(e){ready=false;salesPreview=[];elEbay('salesRows').innerHTML='';elEbay('salesImportStatus').textContent='Import not confirmed: '+e.message+' Close, refresh Supabase, and preview both files again before retrying.';}finally{salesBusy=false;saving=false;editable(ready);elEbay('salesClose').disabled=false;for(const id of ['salesOrdersFile','salesPaymentsFile','salesVendooFile','salesStockConfirm'])elEbay(id).disabled=false;salesRefreshButton();}if(confirmed)await completeSavedImport('salesImportDialog','salesImportStatus');};
 
 
-async function previewSelectedPlatformFile(){const file=elEbay('platformUploadFile').files[0];if(!file)return;if(!ready||saving||salesBusy||ebayImportBusy){elEbay('platformFileStatus').textContent='Finish the current sync/save, then click Preview selected file.';return;}if(platformPreviewBusy)return;platformPreviewBusy=true;elEbay('platformFileStatus').textContent='Reading '+file.name+'…';elEbay('platformPreviewRetry').disabled=true;elEbay('platformUploadFile').disabled=true;elEbay('uploadPlatform').disabled=true;try{if(file.size>10485760)throw Error('Choose a CSV smaller than 10 MB');if(uploadPlatform==='ebay'){const text=await file.text(),matrix=salesCsvMatrix(text);if(matrix.some(r=>r.includes('Order Number')&&r.includes('Sold For')&&r.includes('Transaction ID'))){salesOrdersText=text;salesPaymentsText='';salesVendooText='';salesPreview=[];elEbay('salesStockConfirm').checked=false;elEbay('salesRows').innerHTML='';elEbay('platformUploadDialog').close();elEbay('salesImportDialog').showModal();elEbay('salesImportStatus').textContent='Orders report loaded. Choose its matching transaction report below.';salesRefreshButton();return;}if(matrix.some(r=>r.includes('Type')&&r.includes('Net amount'))){throw Error('Choose the eBay orders report first, then add this transaction report in the sales preview.');}}await handlePlatformListingFile(file);elEbay('platformFileStatus').textContent='Preview ready for '+file.name;}catch(err){elEbay('platformFileStatus').textContent=err.message+' You can select another file or click Preview selected file to retry.';}finally{platformPreviewBusy=false;elEbay('platformPreviewRetry').disabled=false;elEbay('platformUploadFile').disabled=!UPLOAD_PROFILES[uploadPlatform].ready;elEbay('uploadPlatform').disabled=false;}}
+function openEbaySalesImport(file,text){
+  for(const id of ['salesOrdersFile','salesPaymentsFile','salesVendooFile']) elEbay(id).value='';
+  const ordersInput=elEbay('salesOrdersFile');
+  try{
+    const transfer=new DataTransfer();
+    transfer.items.add(file);
+    ordersInput.files=transfer.files;
+  }catch{
+    // The selected report text is available even when assigning FileList is unsupported.
+  }
+  salesOrdersText=text;
+  salesPaymentsText='';
+  salesVendooText='';
+  salesPreview=[];
+  elEbay('salesStockConfirm').checked=false;
+  elEbay('salesRows').innerHTML='';
+  elEbay('salesImportStatus').textContent=file.name+' loaded as the orders report. Choose its matching Transaction CSV.';
+  salesRefreshButton();
+  elEbay('platformUploadDialog').close();
+  elEbay('salesImportDialog').showModal();
+}
+async function previewSelectedPlatformFile(){const file=elEbay('platformUploadFile').files[0];if(!file)return;if(!ready||saving||salesBusy||ebayImportBusy){elEbay('platformFileStatus').textContent='Finish the current sync/save, then click Preview selected file.';return;}if(platformPreviewBusy)return;platformPreviewBusy=true;elEbay('platformFileStatus').textContent='Reading '+file.name+'…';elEbay('platformPreviewRetry').disabled=true;elEbay('platformUploadFile').disabled=true;elEbay('uploadPlatform').disabled=true;try{if(file.size>10485760)throw Error('Choose a CSV smaller than 10 MB');if(uploadPlatform==='ebay'){const text=await file.text(),matrix=salesCsvMatrix(text);if(matrix.some(r=>r.includes('Order Number')&&r.includes('Sold For')&&r.includes('Transaction ID'))){openEbaySalesImport(file,text);return;}if(matrix.some(r=>r.includes('Type')&&r.includes('Net amount'))){throw Error('Choose the eBay orders report first, then add this transaction report in the sales preview.');}}await handlePlatformListingFile(file);elEbay('platformFileStatus').textContent='Preview ready for '+file.name;}catch(err){elEbay('platformFileStatus').textContent=err.message+' You can select another file or click Preview selected file to retry.';}finally{platformPreviewBusy=false;elEbay('platformPreviewRetry').disabled=false;elEbay('platformUploadFile').disabled=!UPLOAD_PROFILES[uploadPlatform].ready;elEbay('uploadPlatform').disabled=false;}}
 elEbay('platformUploadFile').addEventListener('change',previewSelectedPlatformFile);elEbay('platformPreviewRetry').onclick=previewSelectedPlatformFile;
 
 
