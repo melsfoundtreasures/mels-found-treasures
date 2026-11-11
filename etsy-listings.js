@@ -44,11 +44,64 @@
   }
 
   let statusCheckAt = 0;
+  let syncingOrders = false;
+  const syncStatus = document.createElement("span");
+  syncStatus.setAttribute("role", "status");
+  document.getElementById("sortSelect").after(syncStatus);
+  async function syncEtsySales() {
+    if (syncingOrders || saving || !session || !ready) return;
+    syncingOrders = true;
+    syncStatus.textContent = "Checking Etsy sales…";
+    try {
+      const result = await requestEtsyListing({ action: "etsy-sales-sync" });
+      syncStatus.textContent = result.imported ? result.imported + " Etsy sale(s) imported." : "";
+      if (result.review) syncStatus.textContent += " " + result.review + " Etsy order(s) need review.";
+      if (result.imported) await syncFromDrive();
+      await processDelisting();
+    } catch (error) {
+      syncStatus.textContent = "Etsy sales sync needs attention. " + error.message;
+    } finally {
+      syncingOrders = false;
+    }
+  }
+  let delisting = false;
+  const delistStatus = document.createElement("span");
+  delistStatus.setAttribute("role", "status");
+  const retryDelist = document.createElement("button");
+  retryDelist.type = "button";
+  retryDelist.className = "secondary";
+  retryDelist.textContent = "Retry Etsy delisting";
+  retryDelist.hidden = true;
+  document.getElementById("sortSelect").after(delistStatus, retryDelist);
+  async function processDelisting() {
+    if (delisting || !session) return;
+    delisting = true;
+    retryDelist.disabled = true;
+    try {
+      const result = await requestEtsyListing({ action: "listing-process-delist-jobs" });
+      delistStatus.textContent = result.pending ? result.pending + " Etsy delisting(s) pending." : result.done ? "Etsy listings deactivated." : "";
+      retryDelist.hidden = result.pending === 0;
+    } catch (error) {
+      delistStatus.textContent = "Etsy delisting needs attention. " + error.message;
+      retryDelist.hidden = false;
+    } finally {
+      delisting = false;
+      retryDelist.disabled = false;
+    }
+  }
+  retryDelist.onclick = processDelisting;
+  const previousCompleteImport = completeSavedImport;
+  completeSavedImport = async function (...args) {
+    await previousCompleteImport(...args);
+    await processDelisting();
+  };
   const originalRender = renderInventory;
   renderInventory = function () {
     originalRender();
     if (!session || !data.items.length || Date.now() - statusCheckAt < 60_000) return;
     statusCheckAt = Date.now();
+    void syncEtsySales();
+    void processDelisting();
     requestEtsyListing({ action: "listing-statuses" }).then(result => {
       const states = new Map(result.statuses.map(row => [row.inventoryId, row.listed]));
       for (const item of data.items) setInventoryEtsyStatus(item.id, states.get(item.id) ? "Listed" : "Not listed");
@@ -195,6 +248,114 @@
       save.disabled = false;
     } finally {
       close.disabled = false;
+    }
+  };
+
+  const ordersButton = document.createElement("button");
+  ordersButton.type = "button";
+  ordersButton.className = "secondary";
+  ordersButton.textContent = "Import Etsy sales";
+  find.after(ordersButton);
+  const orders = document.createElement("dialog");
+  orders.className = "modal";
+  orders.innerHTML = '<div style="padding:24px"><h2>Review Etsy sales</h2><p>Choose the matching inventory item and enter actual postage and fees for each sale.</p><p data-orders-status role="status"></p><div data-orders-rows style="display:grid;gap:20px;max-height:65vh;overflow:auto"></div><button data-orders-close class="secondary" type="button">Close</button></div>';
+  document.body.append(orders);
+  const ordersStatus = orders.querySelector("[data-orders-status]");
+  const ordersRows = orders.querySelector("[data-orders-rows]");
+  const ordersClose = orders.querySelector("[data-orders-close]");
+  let importingOrder = false;
+  ordersClose.onclick = () => { if (!importingOrder) orders.close(); };
+  orders.addEventListener("cancel", event => { if (importingOrder) event.preventDefault(); });
+
+  function renderOrder(order, items) {
+    const card = document.createElement("form");
+    card.style.cssText = "padding:16px;border:1px solid #536171;border-radius:8px";
+    const title = document.createElement("h3");
+    title.textContent = order.blocked ? "Order #" + order.receiptId : order.title;
+    card.append(title);
+    if (order.blocked) {
+      const explanation = document.createElement("p");
+      explanation.textContent = order.blocked;
+      card.append(explanation);
+      return card;
+    }
+    const detail = document.createElement("p");
+    detail.textContent = order.saleDate + " · " + order.quantity + " unit(s) · Product revenue " + money(order.salePrice) + " · Buyer shipping " + money(order.shippingCharged);
+    const selectLabel = document.createElement("label");
+    selectLabel.textContent = "Inventory item";
+    const select = document.createElement("select");
+    select.required = true;
+    select.append(new Option("Choose existing item", ""));
+    for (const item of items) {
+      if (item.status === "Sold" || item.quantity_remaining < order.quantity) continue;
+      select.append(new Option(item.title, item.id));
+    }
+    select.value = order.inventoryId ?? "";
+    selectLabel.append(select);
+    card.append(detail, selectLabel);
+    const inputs = {};
+    for (const [key, label] of [
+      ["shippingCost", "Actual postage ($)"], ["fees", "Etsy fees ($)"],
+      ["otherCosts", "Other costs ($)"], ["costOfGoods", "Purchase cost for units sold ($), optional if already confirmed"],
+    ]) {
+      const fieldLabel = document.createElement("label");
+      fieldLabel.textContent = label;
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.step = "0.01";
+      input.required = key !== "costOfGoods";
+      fieldLabel.append(input);
+      card.append(fieldLabel);
+      inputs[key] = input;
+    }
+    const message = document.createElement("p");
+    message.setAttribute("role", "status");
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "primary";
+    submit.textContent = "Import sale & update stock";
+    card.append(message, submit);
+    card.onsubmit = async event => {
+      event.preventDefault();
+      if (importingOrder || saving) return;
+      importingOrder = true;
+      ordersClose.disabled = true;
+      submit.disabled = true;
+      message.textContent = "Recording the Etsy sale…";
+      try {
+        const inventoryId = select.value;
+        const result = await requestEtsyListing({
+          action: "etsy-sales-save", receiptId: order.receiptId, transactionId: order.transactionId,
+          inventoryId, expectedInventory: rawItems.get(inventoryId),
+          ...Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, input.value === "" ? null : Number(input.value)])),
+        });
+        message.textContent = result.imported ? "Sale imported." : "This Etsy order was already imported.";
+        for (const input of card.querySelectorAll("input, select")) input.disabled = true;
+        await syncFromDrive();
+        await processDelisting();
+      } catch (error) {
+        message.textContent = error.message;
+        submit.disabled = false;
+      } finally {
+        importingOrder = false;
+        ordersClose.disabled = false;
+      }
+    };
+    return card;
+  }
+  ordersButton.onclick = async () => {
+    if (saving) return toast("Wait for the current save.");
+    ordersRows.replaceChildren();
+    ordersStatus.textContent = "Loading paid Etsy orders…";
+    orders.showModal();
+    try {
+      const result = await requestEtsyListing({ action: "etsy-sales-preview" });
+      for (const order of result.rows) ordersRows.append(renderOrder(order, result.items));
+      ordersStatus.textContent = result.rows.length ? "Reviewing the latest 100 paid orders. Enter 0 for expenses that do not apply." : "No new eligible Etsy sales found in the latest 100 paid orders.";
+      if (result.hasMore) ordersStatus.textContent += " Older orders are outside this review.";
+    } catch (error) {
+      ordersStatus.textContent = error.message;
     }
   };
 })();
