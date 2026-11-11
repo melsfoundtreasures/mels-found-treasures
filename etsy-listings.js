@@ -258,7 +258,7 @@
   find.after(ordersButton);
   const orders = document.createElement("dialog");
   orders.className = "modal";
-  orders.innerHTML = '<div style="padding:24px"><h2>Review Etsy sales</h2><p>Choose the matching inventory item and enter actual postage and fees for each sale.</p><p data-orders-status role="status"></p><div data-orders-rows style="display:grid;gap:20px;max-height:65vh;overflow:auto"></div><button data-orders-close class="secondary" type="button">Close</button></div>';
+  orders.innerHTML = '<div style="padding:24px"><h2>Review Etsy sales</h2><p>Choose the matching inventory item. You can add missing expenses and purchase costs in Sales after importing.</p><p data-orders-status role="status"></p><div data-orders-rows style="display:grid;gap:20px;max-height:65vh;overflow:auto"></div><button data-orders-close class="secondary" type="button">Close</button></div>';
   document.body.append(orders);
   const ordersStatus = orders.querySelector("[data-orders-status]");
   const ordersRows = orders.querySelector("[data-orders-rows]");
@@ -296,7 +296,7 @@
     const inputs = {};
     for (const [key, label] of [
       ["shippingCost", "Actual postage ($)"], ["fees", "Etsy fees ($)"],
-      ["otherCosts", "Other costs ($)"], ["costOfGoods", "Purchase cost for units sold ($), optional if already confirmed"],
+      ["otherCosts", "Other costs ($)"], ["costOfGoods", "Purchase cost for units sold ($)"],
     ]) {
       const fieldLabel = document.createElement("label");
       fieldLabel.textContent = label;
@@ -304,7 +304,7 @@
       input.type = "number";
       input.min = "0";
       input.step = "0.01";
-      input.required = key !== "costOfGoods";
+      input.placeholder = "Optional";
       fieldLabel.append(input);
       card.append(fieldLabel);
       inputs[key] = input;
@@ -315,10 +315,17 @@
     submit.type = "submit";
     submit.className = "primary";
     submit.textContent = "Import sale & update stock";
+    if (select.options.length === 1) {
+      message.textContent = "No inventory item has enough available stock for this order.";
+      submit.disabled = true;
+    }
     card.append(message, submit);
     card.onsubmit = async event => {
       event.preventDefault();
-      if (importingOrder || saving) return;
+      if (importingOrder || saving) {
+        message.textContent = "Another sale is saving. Try again when it finishes.";
+        return;
+      }
       importingOrder = true;
       ordersClose.disabled = true;
       submit.disabled = true;
@@ -352,7 +359,7 @@
     try {
       const result = await requestEtsyListing({ action: "etsy-sales-preview" });
       for (const order of result.rows) ordersRows.append(renderOrder(order, result.items));
-      ordersStatus.textContent = result.rows.length ? "Reviewing the latest 100 paid orders. Enter 0 for expenses that do not apply." : "No new eligible Etsy sales found in the latest 100 paid orders.";
+      ordersStatus.textContent = result.rows.length ? "Showing orders from the latest 100 paid orders." : "No new eligible Etsy sales found in the latest 100 paid orders.";
       if (result.hasMore) ordersStatus.textContent += " Older orders are outside this review.";
     } catch (error) {
       ordersStatus.textContent = error.message;
