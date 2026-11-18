@@ -63,7 +63,7 @@
       reviewOrdersLink.hidden = !result.review;
       reviewOrdersLink.dataset.count = String(result.review || 0);
       reviewOrdersLink.textContent = result.review === 1 ? "1 Etsy order needs review" : result.review + " Etsy orders need review";
-      if (result.imported) await syncFromDrive();
+      if (result.imported || result.refreshed) await syncFromDrive();
       await processDelisting();
     } catch (error) {
       syncStatus.textContent = "Etsy sales sync needs attention. " + error.message;
@@ -72,6 +72,49 @@
     }
   }
   document.getElementById("itemDialog").addEventListener("close", () => { void syncEtsySales(); });
+  const refreshFees = document.createElement("button");
+  refreshFees.type = "button";
+  refreshFees.className = "secondary";
+  refreshFees.textContent = "Refresh Etsy fees";
+  document.getElementById("salesSummary").after(refreshFees);
+  refreshFees.onclick = async () => {
+    if (saving || syncingOrders) return toast("Wait for the current sync.");
+    refreshFees.disabled = true;
+    syncingOrders = true;
+    try {
+      const result = await requestEtsyListing({action: "etsy-sales-refresh"});
+      await syncFromDrive();
+      toast(result.refreshed ? "Etsy expenses refreshed. Open a sale to review its fees and missing postage." : "No pending Etsy expenses to refresh.");
+    } catch (error) { toast(error.message); }
+    finally { refreshFees.disabled = false; syncingOrders = false; }
+  };
+  const feeDetail = document.createElement("p");
+  feeDetail.className = "muted";
+  document.getElementById("saleProfitPreview").after(feeDetail);
+  const priorEditSale = openEditSale;
+  openEditSale = function(id) {
+    priorEditSale(id);
+    const row = rawSales.get(id);
+    let metadata;
+    try { metadata = JSON.parse(row?.notes || "{}").etsy_order_import_v1; } catch {}
+    const expenses = metadata?.order?.expenses;
+    feeDetail.textContent = "";
+    if (!metadata) return;
+    const parts = [];
+    const processing = expenses?.paymentProcessingFee ?? metadata.order?.paymentFees;
+    if (processing != null) parts.push("Payment processing fee: " + money(processing) + " (included in Platform fees)");
+    for (const charge of expenses?.feeBreakdown || []) parts.push(charge.type.replace(/_/g, " ") + ": " + money(charge.amount));
+    if (metadata.financialsPending) {
+      if (!expenses?.feesComplete && metadata.order?.automaticFees !== false)
+        parts.push(expenses?.feeReviewReason || "Etsy fees still need review.");
+      if (expenses?.shippingCost == null && metadata.order?.automaticPostage !== false)
+        parts.push("Actual postage is unavailable from Etsy. Enter your label cost.");
+      parts.push("Saving confirms the displayed fees and postage for profit calculations.");
+    }
+    feeDetail.textContent = parts.join(" · ");
+  };
+  const priorOpenSale = openSale;
+  openSale = function(...args) { feeDetail.textContent = ""; return priorOpenSale(...args); };
   let delisting = false;
   const delistStatus = document.createElement("span");
   delistStatus.setAttribute("role", "status");
@@ -358,11 +401,14 @@
           action: "etsy-sales-expenses", receiptId: order.receiptId, transactionId: order.transactionId,
         });
         for (const key of ["fees", "shippingCost"]) {
+          if (key === "fees" && !expenses.feesComplete) continue;
           if (expenses[key] != null && inputs[key].value === "") inputs[key].value = expenses[key].toFixed(2);
         }
-        expenseStatus.textContent = expenses.fees != null && expenses.shippingCost != null
-          ? "Etsy payment fees and label postage loaded."
-          : "Amounts Etsy hasn’t provided can stay blank for review after import.";
+        expenseStatus.textContent = [expenses.paymentProcessingFee != null
+          ? "Payment processing: " + money(expenses.paymentProcessingFee) + "." : "",
+          expenses.feesComplete ? "Available order fees loaded, including processing."
+            : expenses.feeReviewReason || "Etsy fees need review.",
+          expenses.shippingCost != null ? "Label postage loaded." : "Enter actual postage if Etsy hasn’t provided it."].filter(Boolean).join(" ");
       } catch {
         expensesRequested = false;
         expenseStatus.textContent = "Expenses are unavailable right now. You can import the sale and review them later.";
