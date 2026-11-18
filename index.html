@@ -137,11 +137,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
 
 
 
-    <section class="panel-grid">
-      <article class="panel">
-        <div class="panel-head"><h2>Inventory health</h2><span id="inventoryCount"></span></div>
-        <div id="healthBars" class="health-bars"></div>
-      </article>
+    <section>
       <article class="panel">
         <div class="panel-head"><h2>Quick filters</h2></div>
         <div class="chips" id="filterChips"></div>
@@ -186,6 +182,10 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     </div>
     <p id="statsCoverage" role="status"></p>
     <div class="stats-kpis" id="statsSummary"></div>
+    <article class="panel">
+      <div class="panel-head"><h2>Current inventory health</h2><span id="inventoryCount"></span></div>
+      <div id="healthBars" class="health-bars"></div>
+    </article>
     <div class="stats-grid" id="statsReports"></div>
   </section>
 
@@ -582,16 +582,12 @@ function saleProfit(sale,item){if(sale.financialsPending||saleNeedsCOG(sale))ret
 
 function render(){renderKPIs();renderHealth();renderFilters();renderInventory();renderSales();populateSaleSelect();}
 function renderKPIs(){
-  const unsold=data.items.filter(i=>i.status!=='sold');
-  const soldItems=data.sales.filter(s=>!s.financialsPending&&!saleNeedsCOG(s)).map(s=>({s,item:data.items.find(i=>i.id===s.itemId)}));
-  const cost=unsold.reduce((a,i)=>a+availableStockCost(i),0);
-  const expected=unsold.reduce((a,i)=>a+Number(i.expectedPrice||0),0);
-  const profit=soldItems.reduce((a,x)=>a+saleProfit(x.s,x.item),0);
-  const avgROI=soldItems.length? soldItems.reduce((a,x)=>a+(Number(x.s.purchaseCostAllocated??x.item?.cost??0)>0?saleProfit(x.s,x.item)/Number(x.s.purchaseCostAllocated??x.item.cost)*100:0),0)/soldItems.length:0;
-  const salesRevenue=data.sales.reduce((sum,s)=>sum+Number(s.salePrice||0),0);
-  const salesUnits=data.sales.reduce((sum,s)=>sum+Number(s.quantity||1),0);
-  const cards=[['Total sales',money(salesRevenue),`${data.sales.length} recorded sales · ${salesUnits} units; includes sales awaiting costs`],['Inventory cost',money(cost),`${unsold.length} unsold items`],['Expected sales',money(expected),'Based on your target prices'],['Realized profit',money(profit),`${soldItems.length} complete sales; ${data.sales.filter(s=>s.financialsPending||saleNeedsCOG(s)).length} need costs or expenses`],['Average ROI',`${Math.round(avgROI)}%`,'Across sales with known costs']];
-  document.getElementById('kpis').innerHTML=cards.map(c=>`<article class="kpi"><div class="label">${c[0]}</div><div class="value">${c[1]}</div><div class="mini">${c[2]}</div></article>`).join('');
+  const cards=['eBay','Etsy','Facebook Marketplace'].map(platform=>{
+    const sales=data.sales.filter(sale=>normalizeSalePlatform(sale.marketplace)===platform);
+    const revenue=sales.reduce((total,sale)=>total+Number(sale.salePrice||0),0);
+    return '<article class="kpi"><div class="label">'+escapeHtml(platform)+' total sales</div><div class="value">'+money(revenue)+'</div><div class="mini">All-time item revenue</div></article>';
+  });
+  document.getElementById('kpis').innerHTML=cards.join('');
 }
 function renderHealth(){
   const total=Math.max(1,data.items.filter(i=>i.status!=='sold').length);
@@ -1269,6 +1265,6 @@ handlePlatformListingFile=async function(file){
 <script src="./etsy-connect.js"></script>
 <script src="./photo-loading.js?v=thumbnail-batches"></script>
 <script src="./etsy-listings.js?v=etsy-expense-fill"></script>
-<script src="./stats.js?v=marketplace-totals"></script>
+<script src="./stats.js?v=home-platform-totals"></script>
 </body>
 </html>

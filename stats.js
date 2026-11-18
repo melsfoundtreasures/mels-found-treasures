@@ -119,6 +119,9 @@ function buildResellerStats(items, sales, options, profitForSale) {
       today, days: period.value === "all" ? null : Number(period.value), marketplace: marketplace.value,
     }, saleProfit);
     const total = stats.totals;
+    const unsold = data.items.filter(item => item.status !== "sold");
+    const inventoryCost = unsold.reduce((sum, item) => sum + availableStockCost(item), 0);
+    const expectedRevenue = unsold.reduce((sum, item) => sum + Number(item.expectedPrice || 0), 0);
     const periodStats = buildResellerStats(data.items, data.sales, {
       today, days: period.value === "all" ? null : Number(period.value), marketplace: "all",
     }, saleProfit);
@@ -141,6 +144,8 @@ function buildResellerStats(items, sales, options, profitForSale) {
       ["Average time to sell", days(total), "From listing date to sale, weighted by units"],
       ["Profit per unit", total.completeUnits ? money(total.profit / total.completeUnits) : "—", "Across sales with complete costs"],
       ["Return on cost", total.cost > 0 ? (100 * total.profit / total.cost).toFixed(1) + "%" : "—", "Known net profit ÷ allocated purchase cost"],
+      ["Inventory cost", money(inventoryCost), "Current unsold inventory across all dates"],
+      ["Expected sales", money(expectedRevenue), "Current unsold items at their asking price"],
     ];
     summary.innerHTML = cards.map(([label, value, note]) => '<article><span>' + escape(label) +
       '</span><strong>' + escape(value) + '</strong><small>' + escape(note) + '</small></article>').join("");
