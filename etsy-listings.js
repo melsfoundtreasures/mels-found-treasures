@@ -296,6 +296,7 @@
     const select = document.createElement("select");
     select.required = true;
     select.append(new Option("Choose existing item", ""));
+    select.append(new Option("Create sold item from this Etsy order", "new"));
     for (const item of items) {
       if (item.status === "Sold" || item.quantity_remaining < order.quantity) continue;
       select.append(new Option(item.title, item.id));
@@ -354,10 +355,7 @@
     submit.type = "submit";
     submit.className = "primary";
     submit.textContent = "Import sale & update stock";
-    if (select.options.length === 1) {
-      message.textContent = "No inventory item has enough available stock for this order.";
-      submit.disabled = true;
-    }
+    if (!order.inventoryId) message.textContent = "No automatic match. Choose an existing item or create it from this Etsy order.";
     card.append(message, submit);
     card.onsubmit = async event => {
       event.preventDefault();
