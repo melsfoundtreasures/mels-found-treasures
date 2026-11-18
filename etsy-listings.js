@@ -71,6 +71,7 @@
       syncingOrders = false;
     }
   }
+  document.getElementById("itemDialog").addEventListener("close", () => { void syncEtsySales(); });
   let delisting = false;
   const delistStatus = document.createElement("span");
   delistStatus.setAttribute("role", "status");
@@ -295,15 +296,35 @@
     selectLabel.textContent = "Inventory item";
     const select = document.createElement("select");
     select.required = true;
-    select.append(new Option("Choose existing item", ""));
-    select.append(new Option("Create sold item from this Etsy order", "new"));
-    for (const item of items) {
-      if (item.status === "Sold" || item.quantity_remaining < order.quantity) continue;
-      select.append(new Option(item.title, item.id));
+    const searchLabel = document.createElement("label");
+    searchLabel.textContent = "Search inventory";
+    const search = document.createElement("input");
+    search.type = "search";
+    search.placeholder = "Type an item name or SKU…";
+    search.autocomplete = "off";
+    searchLabel.append(search);
+    const searchStatus = document.createElement("small");
+    searchStatus.setAttribute("role", "status");
+    const availableItems = items.filter(item => item.status !== "Sold" &&
+      item.quantity_remaining !== null && item.quantity_remaining >= order.quantity);
+    function filterInventory() {
+      const selected = select.value || order.inventoryId || "";
+      const query = search.value.trim().toLocaleLowerCase();
+      const matches = availableItems.filter(item => [item.title, item.sku].join(" ").toLocaleLowerCase().includes(query));
+      select.replaceChildren(new Option("Choose existing item", ""), new Option("Create sold item from this Etsy order", "new"));
+      const selectedItem = availableItems.find(item => item.id === selected);
+      if (selectedItem && !matches.some(item => item.id === selected)) matches.unshift(selectedItem);
+      for (const item of matches) {
+        select.append(new Option(item.title + (item.sku ? " · SKU " + item.sku : ""), item.id));
+      }
+      select.value = selected;
+      searchStatus.textContent = matches.length + " inventory item(s) shown" + (selectedItem && query ? " · current selection kept" : "");
     }
-    select.value = order.inventoryId ?? "";
+    search.addEventListener("input", filterInventory);
+    search.addEventListener("keydown", event => { if (event.key === "Enter") event.preventDefault(); });
+    filterInventory();
     selectLabel.append(select);
-    card.append(detail, selectLabel);
+    card.append(detail, searchLabel, searchStatus, selectLabel);
     const expenseDetails = document.createElement("details");
     const expenseSummary = document.createElement("summary");
     expenseSummary.textContent = "Review expenses and purchase cost (optional)";
@@ -355,7 +376,7 @@
     submit.type = "submit";
     submit.className = "primary";
     submit.textContent = "Import sale & update stock";
-    if (!order.inventoryId) message.textContent = "No automatic match. Choose an existing item or create it from this Etsy order.";
+    if (!order.inventoryId) message.textContent = order.reviewReason || "No automatic match. Search and choose an existing item or create it from this Etsy order.";
     card.append(message, submit);
     card.onsubmit = async event => {
       event.preventDefault();
@@ -398,6 +419,7 @@
     ordersStatus.textContent = "Loading paid Etsy orders…";
     orders.showModal();
     try {
+      await syncFromDrive();
       const result = await requestEtsyListing({ action: "etsy-sales-preview" });
       for (const order of result.rows) ordersRows.append(renderOrder(order, result.items));
       ordersStatus.textContent = result.rows.length ? "Showing orders from the latest 100 paid orders." : "No new eligible Etsy sales found in the latest 100 paid orders.";
