@@ -365,14 +365,18 @@ async function syncFromDrive(){
  ready=false;editable(false);setDriveStatus('Loading Supabase…','warn');
  try{
   const filter='?user_id=eq.'+TARGET_USER+'&order=id&limit=1000';
-  const [inventory,sales]=await Promise.all([request('/rest/v1/inventory'+filter),request('/rest/v1/sales'+filter)]);
+  const [inventory,sales,photoRows]=await Promise.all([
+    request('/rest/v1/inventory'+filter),
+    request('/rest/v1/sales'+filter),
+    request('/rest/v1/item_photos?user_id=eq.'+TARGET_USER+'&order=sort_order,id&limit=1000')
+  ]);
   if(inventory.length>=1000||sales.length>=1000)throw new Error('Account exceeds this version’s 1,000-row limit');
   rawItems=new Map(inventory.map(r=>[r.id,r]));
   rawSales=new Map(sales.map(r=>[r.id,r]));
   data={items:inventory.map(fromInventory),sales:sales.map(fromSale)};
   // Bundled thumbnails from the user's export are a display fallback, not a database upload.
   data.items.forEach(i=>{if(!i.photo&&BUNDLED_THUMBNAILS[i.id])i.photo=BUNDLED_THUMBNAILS[i.id];});
-  if(typeof loadStoredPhotos==='function')await loadStoredPhotos();
+  if(typeof loadStoredPhotos==='function')await loadStoredPhotos(photoRows);
   baseline=deep(data);ready=true;render();editable(true);
   setDriveStatus(`Supabase · ${data.items.length} items · ${data.sales.length} sales`,'synced');
   syncItemPageRoute();
@@ -427,22 +431,16 @@ async function startSupabase(){
 
 const PHOTO_BUCKET='reseller-photos';
 let photoImportBusy=false;
-async function loadStoredPhotos(){
- const rows=await request('/rest/v1/item_photos?user_id=eq.'+TARGET_USER+'&order=sort_order,id&limit=1000');
+async function loadStoredPhotos(rows=null){
+ if(!rows)rows=await request('/rest/v1/item_photos?user_id=eq.'+TARGET_USER+'&order=sort_order,id&limit=1000');
  if(rows.length>=1000)throw new Error('Photo count exceeds this version’s 1,000-photo limit');
  const groups=new Map();
  for(const r of rows){
   if(!r.storage_path.startsWith(TARGET_USER+'/'+r.inventory_id+'/'))continue;
-  const signed=await request('/storage/v1/object/sign/'+PHOTO_BUCKET+'/'+r.storage_path,{method:'POST',body:JSON.stringify({expiresIn:3600})});
-  const path=signed.signedURL||signed.signedUrl;
-  if(!path)throw new Error('Could not load a private photo');
-  const url=path.startsWith('https://')?path:SB_URL+(path.startsWith('/storage/v1/')?'':'/storage/v1')+path;
-  const list=groups.get(r.inventory_id)||[];list.push({...r,url});groups.set(r.inventory_id,list);
+  const list=groups.get(r.inventory_id)||[];list.push(r);groups.set(r.inventory_id,list);
  }
  for(const item of data.items){
   item.storagePhotos=groups.get(item.id)||[];
-  const primary=item.storagePhotos.find(p=>p.is_primary)||item.storagePhotos[0];
-  if(primary)item.photo=primary.url;
  }
 }
 function showStoredGallery(item){
@@ -458,13 +456,13 @@ function renderPhotoPreview(){
   const box=document.createElement('div');box.className='photo-tile';
   const image=document.createElement('img');image.src=src;image.alt=label;box.append(image);preview.append(box);return box;
  }
- stored.forEach((p,index)=>tile(p.url,'Item photo '+(index+1)));
+ stored.forEach((p,index)=>{if(p.url)tile(p.url,'Item photo '+(index+1));});
  workingPhotos.forEach((p,index)=>{
   const box=tile(photoSrc(p),'Item photo '+(stored.length+index+1));
   const remove=document.createElement('button');remove.type='button';remove.className='photo-remove';remove.textContent='×';remove.setAttribute('aria-label','Remove new photo');
   remove.onclick=()=>{workingPhotos.splice(index,1);renderPhotoPreview();};box.append(remove);
  });
- if(!preview.children.length){const empty=document.createElement('div');empty.className='photo-empty';empty.textContent='No photos yet';preview.append(empty);}
+ if(!preview.children.length){const empty=document.createElement('div');empty.className='photo-empty';empty.textContent=stored.some(photo=>!photo.url)?'Loading photos…':'No photos yet';preview.append(empty);}
 }
 async function hashBytes(bytes){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');}
 async function uploadVerifiedPhoto(photo,bytes){
@@ -518,12 +516,13 @@ function renderSales(){
  if(!sales.length){list.innerHTML='<div class="muted">'+(data.sales.length?'No sales match your search.':'No sales recorded yet.')+'</div>';return;}
  list.innerHTML=sales.map(s=>{
   const i=data.items.find(i=>i.id===s.itemId),p=saleProfit(s,i);
-  return `<article class="sale-card" data-sale-id="${escapeHtml(s.id)}" role="button" tabindex="0" aria-label="Edit sale for ${escapeHtml(i?.title||'item')}"><div class="thumb">${i?.photo?`<img src="${escapeHtml(i.photo)}" alt="">`:'Sold'}</div><div><h3>${escapeHtml(i?.title||'Unknown item')}</h3><div class="meta"><span>${escapeHtml(s.saleDate)}</span><span>Sold ${money(s.salePrice)}</span>${s.marketplace?`<span>${escapeHtml(s.marketplace)}</span>`:''}<span>Edit sale</span></div></div><div class="item-side"><div class="${saleNeedsCOG(s)?'loss':p>=0?'profit':'loss'}">${s.financialsPending?'Review Etsy fees / postage':saleNeedsCOG(s)?'Missing COG — tap to enter':money(p)+' profit'}</div></div></article>`;
+  return `<article class="sale-card" data-sale-id="${escapeHtml(s.id)}" role="button" tabindex="0" aria-label="Edit sale for ${escapeHtml(i?.title||'item')}"><div class="thumb" data-sales-thumbnail-id="${escapeHtml(s.itemId)}">Sold</div><div><h3>${escapeHtml(i?.title||'Unknown item')}</h3><div class="meta"><span>${escapeHtml(s.saleDate)}</span><span>Sold ${money(s.salePrice)}</span>${s.marketplace?`<span>${escapeHtml(s.marketplace)}</span>`:''}<span>Edit sale</span></div></div><div class="item-side"><div class="${saleNeedsCOG(s)?'loss':p>=0?'profit':'loss'}">${s.financialsPending?'Review Etsy fees / postage':saleNeedsCOG(s)?'Missing COG — tap to enter':money(p)+' profit'}</div></div></article>`;
  }).join('');
  list.querySelectorAll('[data-sale-id]').forEach(card=>{
   card.onclick=()=>openEditSale(card.dataset.saleId);
   card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openEditSale(card.dataset.saleId);}};
  });
+  if(typeof observeSalesThumbnails==='function')observeSalesThumbnails();
 }
 function openSale(itemId=null){
  if(!ready||saving)return toast('Wait for the current sync');
@@ -633,9 +632,13 @@ function setInventoryEtsyStatus(id,label){
     status.dataset.listed=String(label==='Listed');
   }
 }
+let inventoryVisibleLimit=30,inventoryPageKey='';
 function renderInventory(){
   updateInventoryViewLabels();
-  const arr=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
+  const all=inventoryFullView?filteredItems():latestListedItems(data.items), list=document.getElementById('inventoryList'), empty=document.getElementById('emptyState');
+  const pageKey=String(inventoryFullView)+'|'+all.map(item=>item.id).join(',');
+  if(pageKey!==inventoryPageKey){inventoryPageKey=pageKey;inventoryVisibleLimit=30;}
+  const arr=all.slice(0,inventoryVisibleLimit);
   if(!data.items.length){list.innerHTML='';empty.classList.remove('hidden');return;} empty.classList.add('hidden');
   if(!arr.length){list.innerHTML='<div class="empty-state">'+(inventoryFullView?'No items match this filter.':'No listed items yet. Select Inventory to see unsold stock.')+'</div>';return;}
   list.innerHTML='<div class="inventory-columns" aria-hidden="true"><span class="inventory-item-heading">Item name</span><span>Asking price</span><span>eBay</span><span>Etsy</span></div>'+arr.map(i=>{
@@ -647,7 +650,7 @@ function renderInventory(){
     const etsyStatus=i.status==='sold'?'Sold':etsyInventoryStatus.get(i.id)||'—';
     const ebayStatus=i.status==='sold'?'Sold':ebayListed?'Listed':'Not listed';
     return `<article class="item-card inventory-row" data-id="${i.id}">
-      <div class="thumb">${i.photo?`<img src="${i.photo}" alt="">`:'No photo'}</div>
+      <div class="thumb" data-thumbnail-id="${escapeHtml(i.id)}"></div>
       <div class="item-main"><h3><button type="button" class="inventory-item-name">${escapeHtml(i.title||'Untitled item')}</button></h3>
         <div class="meta"><span class="badge ${i.status}">${i.status}</span>${savedItem?.purchase_price!=null?`<span class="inventory-cost">Cost ${money(i.cost)}</span>`:''}${i.sku?`<span>SKU ${escapeHtml(i.sku)}</span>`:''}${i.location?`<span>📍 ${escapeHtml(i.location)}</span>`:''}<span class="inventory-age">${age} days</span>${st!==null?`<span class="inventory-age">ST ${st}%</span>`:''}</div>
       </div>
@@ -669,6 +672,13 @@ function renderInventory(){
       }
     };
   });
+  if(typeof loadInventoryThumbnails==='function')loadInventoryThumbnails();
+  if(all.length>arr.length){
+    const more=document.createElement('button');more.type='button';more.className='secondary';more.textContent='Load 30 more items';
+    more.onclick=()=>{inventoryVisibleLimit+=30;renderInventory();};
+    list.append(more);
+    if(typeof observeInventoryPage==='function')observeInventoryPage(more);
+  }
 }
 function populateSaleSelect(selectedItemId=null){const sel=document.getElementById('saleItemSelect');const candidates=data.items.filter(i=>i.status!=='sold'||i.id===selectedItemId);sel.innerHTML=candidates.length?candidates.map(i=>`<option value="${i.id}">${escapeHtml(i.title)} · ${money(i.expectedPrice)}</option>`).join(''):'<option value="">No unsold items</option>';if(selectedItemId&&candidates.some(i=>i.id===selectedItemId))sel.value=selectedItemId;}
 
@@ -1207,7 +1217,7 @@ async function refreshSavedCostItem(itemId){
  const old=data.items.find(i=>i.id===itemId),oldMeta=metadata(rawItems.get(itemId)?.notes),newMeta=metadata(items[0].notes),fresh=fromInventory(items[0]);
  const photoInputs=m=>JSON.stringify([m.photo||'',m.photos||[],m.photoIds||[]]);
  // Cost edits cannot change storage objects. Keep the existing signed gallery URLs.
- if(old?.storagePhotos){fresh.storagePhotos=old.storagePhotos;const primary=old.storagePhotos.find(p=>p.is_primary)||old.storagePhotos[0];if(primary)fresh.photo=primary.url;}
+ if(old?.storagePhotos){fresh.storagePhotos=old.storagePhotos;}
  if(!fresh.storagePhotos?.length&&old?.photo&&photoInputs(oldMeta)===photoInputs(newMeta))fresh.photo=old.photo;
  const freshSales=sales.map(fromSale);
  rawItems.set(itemId,items[0]);for(const [key,row] of rawSales)if(row.inventory_id===itemId)rawSales.delete(key);for(const row of sales)rawSales.set(row.id,row);
@@ -1257,6 +1267,7 @@ handlePlatformListingFile=async function(file){
 
 </script>
 <script src="./etsy-connect.js"></script>
+<script src="./photo-loading.js"></script>
 <script src="./etsy-listings.js?v=etsy-expense-fill"></script>
 <script src="./stats.js"></script>
 </body>
