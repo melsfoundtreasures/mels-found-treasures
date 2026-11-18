@@ -47,7 +47,12 @@
   let syncingOrders = false;
   const syncStatus = document.createElement("span");
   syncStatus.setAttribute("role", "status");
-  document.getElementById("sortSelect").after(syncStatus);
+  const reviewOrdersLink = document.createElement("button");
+  reviewOrdersLink.type = "button";
+  reviewOrdersLink.hidden = true;
+  reviewOrdersLink.style.cssText = "padding:0;border:0;background:none;color:#75cfbc;text-decoration:underline;cursor:pointer;font:inherit";
+  reviewOrdersLink.onclick = () => ordersButton.click();
+  document.getElementById("sortSelect").after(syncStatus, reviewOrdersLink);
   async function syncEtsySales() {
     if (syncingOrders || saving || !session || !ready) return;
     syncingOrders = true;
@@ -55,7 +60,9 @@
     try {
       const result = await requestEtsyListing({ action: "etsy-sales-sync" });
       syncStatus.textContent = result.imported ? result.imported + " Etsy sale(s) imported." : "";
-      if (result.review) syncStatus.textContent += " " + result.review + " Etsy order(s) need review.";
+      reviewOrdersLink.hidden = !result.review;
+      reviewOrdersLink.dataset.count = String(result.review || 0);
+      reviewOrdersLink.textContent = result.review === 1 ? "1 Etsy order needs review" : result.review + " Etsy orders need review";
       if (result.imported) await syncFromDrive();
       await processDelisting();
     } catch (error) {
@@ -373,6 +380,10 @@
         for (const input of card.querySelectorAll("input, select")) input.disabled = true;
         await syncFromDrive();
         await processDelisting();
+        const remaining = Math.max(0, Number(reviewOrdersLink.dataset.count || 0) - 1);
+        reviewOrdersLink.dataset.count = String(remaining);
+        reviewOrdersLink.hidden = remaining === 0;
+        reviewOrdersLink.textContent = remaining === 1 ? "1 Etsy order needs review" : remaining + " Etsy orders need review";
       } catch (error) {
         message.textContent = error.message;
         submit.disabled = false;
