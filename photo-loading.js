@@ -109,7 +109,7 @@ async function cacheOpenedItemThumbnail(item) {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.75));
     if (!blob) return;
     await request("/storage/v1/object/" + PHOTO_BUCKET + "/" + path, {
-      method: "POST", headers: { "Content-Type": "image/jpeg", "x-upsert": "true" }, body: blob,
+      method: "POST", headers: { "Content-Type": "image/jpeg", "x-upsert": "false" }, body: blob,
     });
   } catch {
     // Photos remain usable if their host prevents thumbnail caching.

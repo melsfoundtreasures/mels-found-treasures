@@ -119,12 +119,22 @@ function buildResellerStats(items, sales, options, profitForSale) {
       today, days: period.value === "all" ? null : Number(period.value), marketplace: marketplace.value,
     }, saleProfit);
     const total = stats.totals;
+    const periodStats = buildResellerStats(data.items, data.sales, {
+      today, days: period.value === "all" ? null : Number(period.value), marketplace: "all",
+    }, saleProfit);
+    const platformTotal = name => periodStats.marketplaces.find(entry => entry.name.toLowerCase() === name.toLowerCase()) ||
+      { units: 0, revenue: 0, sales: 0 };
     coverage.textContent = total.sales
       ? number(total.sales) + " recorded sales · Profit available for " + number(total.completeSales) +
         " sales · Listing dates available for " + number(total.speedUnits) + " of " + number(total.units) + " sold units."
       : "Your recorded sales will appear here for the selected period and marketplace.";
     if (total.invalidDates) coverage.textContent += " " + number(total.invalidDates) + " sale(s) have missing or future dates.";
     const cards = [
+      ...["eBay", "Etsy"].map(name => {
+        const platform = platformTotal(name);
+        return [name + " total sales", money(platform.revenue),
+          number(platform.units) + " units · " + number(platform.sales) + " sale records · Selected date range, item revenue"];
+      }),
       ["Units sold", number(total.units), number(total.sales) + " sale records"],
       ["Product revenue", money(total.revenue), "Item sale prices, excluding shipping and tax"],
       ["Known net profit", total.completeSales ? money(total.profit) : "Pending costs", "After purchase cost, shipping, and recorded fees"],
