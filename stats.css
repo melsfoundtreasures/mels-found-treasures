@@ -1,6 +1,9 @@
 #statsLink{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border:1px solid #475569;border-radius:10px;text-decoration:none;color:#e2e8f0;font-weight:650;font-size:.9rem}
 #statsLink[aria-current="page"]{background:#164e45;border-color:#4a9687;color:#d9fff5}
 #statsPage{padding-top:28px;padding-bottom:48px}
+#homePage>.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+#statsPage>.panel{margin-bottom:20px}
+@media(max-width:600px){#homePage>.kpis{grid-template-columns:1fr}}
 .stats-heading{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:12px}
 .stats-heading h1{margin:10px 0 0;font-size:2rem;letter-spacing:-.04em}
 .stats-heading a{color:#a6d7cd;text-decoration:none}
