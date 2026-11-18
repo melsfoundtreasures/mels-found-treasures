@@ -130,7 +130,7 @@ function buildResellerStats(items, sales, options, profitForSale) {
       : "Your recorded sales will appear here for the selected period and marketplace.";
     if (total.invalidDates) coverage.textContent += " " + number(total.invalidDates) + " sale(s) have missing or future dates.";
     const cards = [
-      ...["eBay", "Etsy"].map(name => {
+      ...["eBay", "Etsy", "Facebook Marketplace"].map(name => {
         const platform = platformTotal(name);
         return [name + " total sales", money(platform.revenue),
           number(platform.units) + " units · " + number(platform.sales) + " sale records · Selected date range, item revenue"];
