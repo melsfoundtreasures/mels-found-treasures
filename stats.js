@@ -90,6 +90,77 @@ function buildResellerStats(items, sales, options, profitForSale) {
   const number = value => new Intl.NumberFormat().format(value);
   const days = entry => entry.speedUnits ? (entry.speedDays / entry.speedUnits).toFixed(1) + " days" : "—";
   const profit = entry => entry.completeSales ? money(entry.profit) : "Pending costs";
+  const marketplacePopup = document.createElement("dialog");
+  marketplacePopup.className = "modal marketplace-stats-popup";
+  marketplacePopup.setAttribute("aria-labelledby", "marketplaceStatsTitle");
+  marketplacePopup.innerHTML = '<div class="marketplace-stats-content"><div class="stats-heading"><h2 id="marketplaceStatsTitle"></h2><button type="button" class="secondary" data-close-marketplace-stats>Close</button></div><label class="marketplace-stats-period">Sales period<select><option value="all">All time</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select></label><p class="marketplace-stats-coverage" role="status"></p><div class="stats-kpis"></div><div class="stats-grid"></div></div>';
+  document.body.append(marketplacePopup);
+  const popupPeriod = marketplacePopup.querySelector("select");
+  let popupMarketplace = null;
+  marketplacePopup.querySelector("[data-close-marketplace-stats]").onclick = () => marketplacePopup.close();
+
+  function localToday() {
+    const date = new Date();
+    return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
+  }
+
+  function renderMarketplacePopup() {
+    if (!marketplacePopup.open) return;
+    marketplacePopup.querySelector("#marketplaceStatsTitle").textContent = popupMarketplace + " stats";
+    const popupSummary = marketplacePopup.querySelector(".stats-kpis");
+    const popupReports = marketplacePopup.querySelector(".stats-grid");
+    const popupCoverage = marketplacePopup.querySelector(".marketplace-stats-coverage");
+    if (!ready) {
+      popupSummary.replaceChildren();
+      popupReports.replaceChildren();
+      popupCoverage.textContent = session ? "Loading your sales…" : "Sign in to see your sales stats.";
+      return;
+    }
+    const sales = data.sales.map(sale => ({ ...sale, marketplace: normalizeSalePlatform(sale.marketplace) || sale.marketplace }));
+    const stats = buildResellerStats(data.items, sales, {
+      today: localToday(), days: popupPeriod.value === "all" ? null : Number(popupPeriod.value), marketplace: popupMarketplace,
+    }, saleProfit);
+    const total = stats.totals;
+    popupCoverage.textContent = number(total.sales) + " " + popupMarketplace + " sale records · " +
+      number(total.completeSales) + " with complete costs · " + number(total.speedUnits) + " units with listing dates.";
+    const cards = [
+      ["Total sales", money(total.revenue), "Item revenue, excluding shipping and tax"],
+      ["Units sold", number(total.units), number(total.sales) + " sale records"],
+      ["Known net profit", total.completeSales ? money(total.profit) : "Pending costs", "After purchase cost, shipping, and recorded fees"],
+      ["Average time to sell", days(total), "Listing date to sale, weighted by units"],
+      ["Profit per unit", total.completeUnits ? money(total.profit / total.completeUnits) : "—", "Across sales with complete costs"],
+      ["Return on cost", total.cost > 0 ? (total.profit / total.cost * 100).toFixed(1) + "%" : "—", "Known net profit ÷ allocated purchase cost"],
+    ];
+    popupSummary.innerHTML = cards.map(([label, value, note]) => '<article><span>' + escape(label) +
+      '</span><strong>' + escape(value) + '</strong><small>' + escape(note) + '</small></article>').join("");
+    const best = [...stats.products].sort((a, b) => b.units - a.units || b.revenue - a.revenue).slice(0, 10);
+    const quickest = stats.products.filter(entry => entry.speedUnits)
+      .sort((a, b) => a.speedDays / a.speedUnits - b.speedDays / b.speedUnits || b.speedUnits - a.speedUnits).slice(0, 10);
+    const profitable = stats.products.filter(entry => entry.completeSales).sort((a, b) => b.profit - a.profit).slice(0, 10);
+    popupReports.innerHTML =
+      table("Best sellers", "Items ranked by total units sold.", ["Item", "Units", "Revenue"],
+        best.map(entry => [entry.name, number(entry.units), money(entry.revenue)])) +
+      table("Quickest sellers", "Only sales with recorded listing dates.", ["Item", "Avg. days", "Dated units"],
+        quickest.map(entry => [entry.name, days(entry), number(entry.speedUnits)])) +
+      table("Most profit", "Sales with complete recorded costs and expenses.", ["Item", "Net profit", "Complete units"],
+        profitable.map(entry => [entry.name, profit(entry), number(entry.completeUnits)])) +
+      table("Categories", "Item categories for this marketplace.", ["Category", "Units", "Revenue", "Known profit"],
+        stats.categories.sort((a, b) => b.units - a.units).slice(0, 10)
+          .map(entry => [entry.name, number(entry.units), money(entry.revenue), profit(entry)])) +
+      table("Monthly sales", "Recent months within your selected period.", ["Month", "Units", "Revenue", "Known profit"],
+        stats.months.sort((a, b) => b.name.localeCompare(a.name)).slice(0, 12)
+          .map(entry => [new Date(entry.name + "-01T12:00:00").toLocaleDateString(undefined, { month: "short", year: "numeric" }),
+            number(entry.units), money(entry.revenue), profit(entry)]));
+  }
+  document.getElementById("kpis").addEventListener("click", event => {
+    const card = event.target.closest("[data-marketplace-stats]");
+    if (!card) return;
+    popupMarketplace = card.dataset.marketplaceStats;
+    popupPeriod.value = "all";
+    marketplacePopup.showModal();
+    renderMarketplacePopup();
+  });
+  popupPeriod.addEventListener("change", renderMarketplacePopup);
 
   function table(title, description, columns, rows) {
     return '<article class="stats-report"><h2>' + escape(title) + '</h2><p>' + escape(description) +
@@ -188,6 +259,7 @@ function buildResellerStats(items, sales, options, profitForSale) {
   render = function () {
     renderApp();
     if (location.hash === "#stats") renderStats();
+    renderMarketplacePopup();
   };
   period.addEventListener("change", renderStats);
   marketplace.addEventListener("change", renderStats);

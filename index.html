@@ -108,7 +108,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     .item-page-content{padding:20px 14px 36px}
   }
 </style>
-<link rel="stylesheet" href="./stats.css">
+<link rel="stylesheet" href="./stats.css?v=marketplace-popup">
 </head>
 <body>
   <header class="topbar">
@@ -585,7 +585,7 @@ function renderKPIs(){
   const cards=['eBay','Etsy','Facebook Marketplace'].map(platform=>{
     const sales=data.sales.filter(sale=>normalizeSalePlatform(sale.marketplace)===platform);
     const revenue=sales.reduce((total,sale)=>total+Number(sale.salePrice||0),0);
-    return '<article class="kpi"><div class="label">'+escapeHtml(platform)+' total sales</div><div class="value">'+money(revenue)+'</div><div class="mini">All-time item revenue</div></article>';
+    return '<button type="button" class="kpi marketplace-total" data-marketplace-stats="'+escapeHtml(platform)+'" aria-haspopup="dialog"><span class="label">'+escapeHtml(platform)+' total sales</span><span class="value">'+money(revenue)+'</span><span class="mini">View '+escapeHtml(platform)+' stats</span></button>';
   });
   document.getElementById('kpis').innerHTML=cards.join('');
 }
@@ -1265,6 +1265,6 @@ handlePlatformListingFile=async function(file){
 <script src="./etsy-connect.js"></script>
 <script src="./photo-loading.js?v=thumbnail-batches"></script>
 <script src="./etsy-listings.js?v=etsy-expense-fill"></script>
-<script src="./stats.js?v=home-platform-totals"></script>
+<script src="./stats.js?v=marketplace-popup"></script>
 </body>
 </html>
