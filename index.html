@@ -108,6 +108,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     .item-page-content{padding:20px 14px 36px}
   }
 </style>
+<link rel="stylesheet" href="./stats.css">
 </head>
 <body>
   <header class="topbar">
@@ -117,6 +118,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       <p class="sub">Your inventory, sales, and profit — connected to the same account as your phone.</p>
       <div id="driveStatus" class="drive-status">Sign in to Supabase</div>
     <nav class="action-row" aria-label="Main actions">
+      <a class="secondary" href="#stats" id="statsLink">Stats</a>
       <button class="primary" id="addItemBtn">+ Add Item</button>
       <button class="secondary" id="scanItemBtn">📷 Scan Item</button>
       <button class="secondary" id="recordSaleBtn">$ Record Sale</button>
@@ -130,7 +132,7 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
     <button id="installBtn" class="ghost hidden">Install App</button>
   </header>
 
-  <main class="shell">
+  <main class="shell" id="homePage">
     <section class="kpis" id="kpis"></section>
 
 
@@ -174,6 +176,18 @@ button.costs-need-update{background:#b91c1c;color:#fff;border:1px solid #f87171}
       <div class="toolbar"><label class="search" style="flex:1">Search sales<input id="salesSearchInput" type="search" placeholder="Title, SKU, platform, date, price or order number" autocomplete="off"></label><button id="salesSearchClear" type="button" class="secondary">Clear search</button></div><div id="salesList" class="sales-list"></div>
     </section>
   </main>
+  <section class="shell hidden" id="statsPage" aria-labelledby="statsTitle">
+    <div class="stats-heading">
+      <div><a href="#">← Back to home</a><h1 id="statsTitle" tabindex="-1">Sales stats</h1></div>
+      <div class="stats-filters">
+        <label>Sales period<select id="statsPeriod"><option value="all">All time</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select></label>
+        <label>Marketplace<select id="statsMarketplace"><option value="all">All marketplaces</option></select></label>
+      </div>
+    </div>
+    <p id="statsCoverage" role="status"></p>
+    <div class="stats-kpis" id="statsSummary"></div>
+    <div class="stats-grid" id="statsReports"></div>
+  </section>
 
   <dialog id="itemDialog" aria-labelledby="itemDialogTitle">
     <form id="itemForm">
@@ -1244,5 +1258,6 @@ handlePlatformListingFile=async function(file){
 </script>
 <script src="./etsy-connect.js"></script>
 <script src="./etsy-listings.js?v=etsy-expense-fill"></script>
+<script src="./stats.js"></script>
 </body>
 </html>
