@@ -33,12 +33,14 @@
   const previousOpen = openItem;
   openItem = async function(id) {
     send.disabled = true;
-    await previousOpen(id);
+    const opened = previousOpen(id);
+    const initialItem = data.items.find(i => i.id === id);
+    form.elements.facebookDescription.value = initialItem?.facebookDescription ?? initialItem?.description ?? '';
+    form.elements.facebookListingUrl.value = initialItem?.facebookListingUrl || '';
+    await opened;
     if (editingId !== id) return;
     const item = data.items.find(i => i.id === id);
     status.textContent = '';
-    form.elements.facebookDescription.value = item?.facebookDescription || item?.description || '';
-    form.elements.facebookListingUrl.value = item?.facebookListingUrl || '';
     send.disabled = !item || item.status === 'sold';
     if (!item) return;
     try {
@@ -55,8 +57,9 @@
     if (!item || item.status === 'sold' || !(item.quantityRemaining > 0)) return toast('This item has no available stock.');
     send.disabled = true;
     try {
-      const title = form.elements.title.value.trim();
-      const price = Number(form.elements.expectedPrice.value);
+      const title = (form.elements.facebookTitle?.value || form.elements.title.value).trim();
+      const price = Number(form.elements.facebookPrice?.value === '' || !form.elements.facebookPrice
+        ? form.elements.expectedPrice.value : form.elements.facebookPrice.value);
       const description = form.elements.facebookDescription.value.trim();
       if (!title || title.length > 200 || !Number.isFinite(price) || price < 0 || Math.round(price*100)/100 !== price || !description)
         throw Error('Enter a title (up to 200 characters), a price in cents and a Facebook description.');

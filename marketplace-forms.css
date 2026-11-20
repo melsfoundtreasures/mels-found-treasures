@@ -1,0 +1,12 @@
+.marketplace-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid #d9e0e5;padding:12px 0;margin:0 0 12px;position:sticky;top:0;background:#fff;z-index:5}
+.marketplace-tabs button{background:#f1f4f6;border:1px solid #d3dce2;color:#35444e;border-radius:7px;padding:10px 18px;font:inherit;cursor:pointer}
+.marketplace-tabs button[aria-selected=true]{background:#176653;border-color:#176653;color:white}
+.marketplace-form-note{color:#586873;font-size:14px;line-height:1.5;margin:12px 0 22px}
+.marketplace-form{max-width:1050px;padding:8px 0 40px}.marketplace-form>h3{font-size:22px;margin:12px 0 8px}
+.marketplace-form label{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}.marketplace-form input,.marketplace-form textarea{box-sizing:border-box;width:100%}
+#itemDialog .marketplace-form label{color:#344550}
+#itemPageEtsyNav,.item-page-sidebar nav a[href="#facebookListingPanel"]{display:none}
+.marketplace-sidebar{display:grid;gap:6px;margin:20px 0}.marketplace-sidebar button{border:0;border-radius:5px;text-align:left;padding:9px 10px;background:transparent;color:#455761;font:inherit;cursor:pointer}
+.marketplace-sidebar button[aria-pressed=true]{background:#e5f2ee;color:#145744;font-weight:600}
+#marketplace-overview[hidden],.marketplace-form[hidden]{display:none!important}
+@media(max-width:650px){.marketplace-tabs{position:static}.marketplace-tabs button{padding:9px 12px}.marketplace-sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}.marketplace-form .form-grid.two{grid-template-columns:1fr}}
