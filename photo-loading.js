@@ -19,14 +19,28 @@ function signedPhotoUrl(path) {
   return path.startsWith("https://") ? path : SB_URL + (path.startsWith("/storage/v1/") ? "" : "/storage/v1") + path;
 }
 
+function vendooThumbnailUrl(item) {
+  const source = item.photo || item.photos?.[0];
+  if (!source) return null;
+  try {
+    const url = new URL(source);
+    if (url.protocol !== "https:" || url.hostname !== "images.vendoo.co" || !url.pathname.startsWith("/images/")) return null;
+    url.searchParams.set("width", "160");
+    url.searchParams.set("height", "160");
+    url.searchParams.set("canvas", "160,160");
+    return url.href;
+  } catch { return null; }
+}
+
 async function loadThumbnailCells(cells) {
   const jobs = await Promise.all(cells.map(async cell => {
     const item = data.items.find(item => item.id === (cell.dataset.thumbnailId || cell.dataset.salesThumbnailId));
     if (!item) return null;
     const path = await thumbnailPath(item);
-    return { cell, item, path };
+    const vendooPreview = vendooThumbnailUrl(item);
+    return { cell, item, path, vendooPreview, remoteOnly: !!vendooPreview && !item.storagePhotos?.length };
   }));
-  const missing = [...new Set(jobs.filter(job => job?.path &&
+  const missing = [...new Set(jobs.filter(job => job?.path && !job.remoteOnly &&
     (!thumbnailUrls.has(job.path) || thumbnailUrls.get(job.path).expires < Date.now())).map(job => job.path))];
   if (missing.length) {
     try {
@@ -45,7 +59,7 @@ async function loadThumbnailCells(cells) {
     if (!job.cell.isConnected) continue;
     const cached = thumbnailUrls.get(job.path);
     const inline = job.item.photo?.startsWith("data:image/") ? job.item.photo : null;
-    const url = cached?.url || inline;
+    const url = cached?.url || job.vendooPreview || inline;
     if (!url) { job.cell.textContent = job.path ? "Open for photo" : "No photo"; continue; }
     const image = document.createElement("img");
     image.alt = "";
@@ -53,7 +67,16 @@ async function loadThumbnailCells(cells) {
     image.height = 64;
     image.loading = "lazy";
     image.decoding = "async";
-    image.onerror = () => { job.cell.textContent = "Open for photo"; };
+    let fallbackTried = false;
+    image.onerror = () => {
+      if (job.path) thumbnailUrls.delete(job.path);
+      if (cached && job.vendooPreview && !fallbackTried) {
+        fallbackTried = true;
+        image.src = job.vendooPreview;
+        return;
+      }
+      job.cell.textContent = "Open for photo";
+    };
     image.src = url;
     job.cell.replaceChildren(image);
   }
@@ -92,7 +115,15 @@ function observeInventoryPage(button) {
 
 async function cacheOpenedItemThumbnail(item) {
   const path = await thumbnailPath(item);
-  if (!path || thumbnailUrls.has(path)) return;
+  if (!path) return;
+  const existing = thumbnailUrls.get(path);
+  if (existing) {
+    try {
+      const response = await fetch(existing.url, { method: "HEAD", credentials: "omit", signal: AbortSignal.timeout(5000) });
+      if (response.ok) return;
+    } catch {}
+    thumbnailUrls.delete(path);
+  }
   const primary = item.storagePhotos?.find(photo => photo.is_primary) || item.storagePhotos?.[0];
   const source = primary?.url || item.photo || item.photos?.[0];
   if (!source) return;
@@ -111,6 +142,10 @@ async function cacheOpenedItemThumbnail(item) {
     await request("/storage/v1/object/" + PHOTO_BUCKET + "/" + path, {
       method: "POST", headers: { "Content-Type": "image/jpeg", "x-upsert": "false" }, body: blob,
     });
+    thumbnailUrls.set(path, { url: URL.createObjectURL(blob), expires: Date.now() + 3500000 });
+    const cells = [...document.querySelectorAll("[data-thumbnail-id], [data-sales-thumbnail-id]")]
+      .filter(cell => (cell.dataset.thumbnailId || cell.dataset.salesThumbnailId) === item.id);
+    if (cells.length) void loadThumbnailCells(cells);
   } catch {
     // Photos remain usable if their host prevents thumbnail caching.
   }
