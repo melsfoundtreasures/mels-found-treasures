@@ -10,6 +10,8 @@ function listingSharedValue(item,suffix){
   if(suffix==='Price')return item.expectedPrice??shared.price??'';
   if(suffix==='Category')return item.category??shared.category??'';
   if(suffix==='Sku')return item.sku??shared.sku??'';
+  if(suffix==='LocationDescription')return shared.locationDescription||item.locationDescription||'Bettendorf, IA';
+  if(suffix==='ShippingZip')return shared.shippingZip||item.shippingZip||'52722';
   const fallback=suffix==='Price'?item.expectedPrice:suffix==='Quantity'?Math.max(1,Number(item.quantityRemaining??1)):suffix==='PricingFormat'?'Fixed Price':suffix==='Country'?'United States':item[key];
   const value=shared[key]??fallback??'';
   return value;
@@ -29,5 +31,6 @@ function listingDraftOverrides(item){
 }
 function listingDraftValue(item,prefix,suffix,flags=listingDraftOverrides(item)){
   const normalized=listingCanonicalItem(item),name=prefix+suffix;
+  if(['LocationDescription','ShippingZip'].includes(suffix) && !String(normalized[name]??'').trim())return listingSharedValue(normalized,suffix);
   return flags[name]===true?(normalized[name]??''):listingSharedValue(normalized,suffix);
 }

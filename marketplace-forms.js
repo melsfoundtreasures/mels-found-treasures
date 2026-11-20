@@ -229,7 +229,7 @@
     if(key==='facebook'){
       const defaults={Quantity:Math.max(1,Number(item.quantityRemaining ?? 1)),Location:'',DeliveryMethod:'Local pickup only',Tags:'',Sku:item.sku||'',HideFromFriends:'false',Brand:'',Model:'',Color:'',Material:'',CategorySpecifics:''};
       for(const [name,fallback] of Object.entries(defaults)){
-        const input=form.elements['facebook'+name];if(!reset)input.value=LISTING_FIELD_KEYS[name]?listingDraftValue(item,'facebook',name,draftFlags):(item['facebook'+name]??fallback);
+        const input=form.elements['facebook'+name];if(!reset)input.value=name==='Location'?(item.facebookLocation||'Bettendorf, IA'):LISTING_FIELD_KEYS[name]?listingDraftValue(item,'facebook',name,draftFlags):(item['facebook'+name]??fallback);
       }
       const checked=form.elements.facebookHideFromFriends.value;
       document.querySelector('[data-facebook-hide]').checked=checked===true || checked==='true' || checked==='on';
