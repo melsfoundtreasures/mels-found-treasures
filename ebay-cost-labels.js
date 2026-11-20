@@ -4,9 +4,23 @@ function ebayLabelCost(value) {
   return match?(Number(match[1])*100+Number((match[2] || '').padEnd(2,'0')))/100:null;
 }
 (() => {
+  function listingFields(source,row){
+    const headers=new Map(Object.entries(source).map(([name,value])=>[name.toLowerCase().replace(/[^a-z0-9]/g,''),String(value??'').trim()]));
+    const result={title:row.title,price:row.price,quantity:row.available};
+    if(row.sku)result.sku=row.sku;if(row.category)result.category=row.category;
+    const aliases={description:['Description','Item description'],brand:['Brand','C:Brand'],color:['Color','Colour','C:Color','Primary Color'],condition:['Condition','Condition name'],type:['Type','C:Type'],model:['Model','C:Model'],material:['Material','C:Material'],mpn:['MPN','C:MPN'],upc:['P:UPC','UPC'],conditionDescription:['Condition description'],shippingPolicy:['Shipping policy','Shipping profile name'],paymentPolicy:['Payment policy','Payment profile name'],returnPolicy:['Return policy','Return profile name'],country:['Country','Location country'],locationDescription:['Location description','Item location'],shippingZip:['Postal code','ZIP code','Shipping location (Zip Code)'],weightLb:['WeightMajor','Package weight lb','Weight lbs'],weightOz:['WeightMinor','Package weight oz'],lengthIn:['Package length','Package length in'],widthIn:['Package width','Package width in'],heightIn:['Package height','Package height in']};
+    for(const [key,names] of Object.entries(aliases))for(const name of names){const value=headers.get(name.toLowerCase().replace(/[^a-z0-9]/g,''));if(value){result[key]=value;break;}}
+    if(row.sourceSoldStatus==null)result.pricingFormat='Fixed Price';
+    return result;
+  }
   function decorate(planned,source) {
     return planned.map((row,index)=>{
       row.sku=String(source[index]['Custom label (SKU)'] || '').trim();
+      if(['new','update'].includes(row.state)){
+        row.listingFields=listingFields(source[index],row);
+        row.draftOverrides=typeof listingDraftOverrides==='function'?listingDraftOverrides(row.expected||{}):{__version:1};
+        row.reason+='; fill imported listing fields across matching forms; keep customized platform drafts';
+      }
       const cost=ebayLabelCost(row.sku);
       if(cost==null || !['new','update'].includes(row.state))return row;
       const unit='$'+cost.toFixed(2)+' per item';
