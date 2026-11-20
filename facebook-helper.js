@@ -6,7 +6,7 @@
     <p>Send this item to the Reseller Chrome extension, then review it on Facebook before publishing. Category, condition and location are selected on Facebook.</p>
     <label>Listing description<textarea name="facebookDescription" rows="6" maxlength="10000" placeholder="Describe the item, its condition and any flaws"></textarea></label>
     <label>Published Facebook listing link<input name="facebookListingUrl" type="url" placeholder="https://www.facebook.com/marketplace/item/…" pattern="https://(www\\.)?facebook\\.com/marketplace/item/[0-9]+/?"></label>
-    <p>Use Save Item to keep the description and listing link.</p>
+    <p>Use Save Item to keep all Facebook draft fields and the listing link.</p>
     <button type="button" class="secondary" data-facebook-send>Send to Facebook</button>
     <p data-facebook-status role="status"></p>
     <a href="./reseller-facebook-extension.zip" download>Download the Chrome extension</a> · <a href="./facebook-extension-setup.html" target="_blank" rel="noopener">Installation instructions</a>`;
@@ -61,8 +61,17 @@
       const price = Number(form.elements.facebookPrice?.value === '' || !form.elements.facebookPrice
         ? form.elements.expectedPrice.value : form.elements.facebookPrice.value);
       const description = form.elements.facebookDescription.value.trim();
-      if (!title || title.length > 200 || !Number.isFinite(price) || price < 0 || Math.round(price*100)/100 !== price || !description)
-        throw Error('Enter a title (up to 200 characters), a price in cents and a Facebook description.');
+      if (!title || title.length > 99 || !Number.isFinite(price) || price < 0 || Math.round(price*100)/100 !== price || !description)
+        throw Error('Enter a title (up to 99 characters), a price in cents and a Facebook description.');
+      if (form.elements.facebookQuantity) {
+        const quantity=Number(form.elements.facebookQuantity.value);
+        if(!Number.isSafeInteger(quantity) || quantity<1 || quantity>item.quantityRemaining)
+          throw Error('Facebook quantity must be a whole number within the available inventory stock.');
+        if(!form.elements.facebookCategory.value.trim() || !form.elements.facebookCondition.value || !form.elements.facebookLocation.value.trim())
+          throw Error('Complete the Facebook category, condition and city/state location before sending. You can save an unfinished draft with Save Item.');
+        const tags=form.elements.facebookTags.value.split(',').map(tag=>tag.trim()).filter(Boolean);
+        if(tags.length>20)throw Error('Use no more than 20 Facebook tags.');
+      }
       // Share listing content only. Costs, sales, notes and account credentials stay in Reseller.
       const originals = [...(item.storagePhotos || []).map(p => p.url), ...workingPhotos.map(photoSrc), ...(item.photos || [])].filter(Boolean);
       const photos = [...new Set(originals.length ? originals : [item.photo].filter(Boolean))].slice(0,10);
