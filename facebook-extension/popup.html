@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Reseller Facebook Helper</title><link rel="stylesheet" href="popup.css"></head>
+<body><h1>Facebook Marketplace</h1><p>Review the item, then fill Facebook’s “Item for sale” form. You publish it yourself.</p>
+<form id="draftForm"><label>Title<input id="title" maxlength="200" required></label><label>Price ($)<input id="price" type="number" min="0" max="10000000" step="0.01" required></label><label>Description<textarea id="description" rows="5" maxlength="10000" required></textarea></label>
+<label><input id="photos" type="checkbox" checked> Add photos if the form has an empty photo upload</label><p id="photoCount"></p>
+<button type="submit" id="fill">Fill listing in this Facebook tab</button></form>
+<button id="open" type="button">Open Facebook listing form</button><hr>
+<label>Published listing URL<input id="listingUrl" type="url" placeholder="Paste the published item link"></label>
+<p>Only save a URL after checking it is the item above.</p><button id="remember" type="button">Send listing link back to Reseller</button>
+<button id="clear" type="button">Clear draft and remembered links</button><p id="status" role="status"></p><script src="shared.js"></script><script src="popup.js"></script></body></html>

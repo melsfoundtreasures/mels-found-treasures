@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Reseller — Facebook Marketplace Helper",
+  "version": "0.1.0",
+  "minimum_chrome_version": "120",
+  "description": "Transfer a Reseller item into a Facebook Marketplace draft for your review.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://qlzbgzlfuajsxqsjlduo.supabase.co/storage/v1/object/sign/reseller-photos/*", "https://images.vendoo.co/*"],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_title": "Reseller Facebook Helper", "default_popup": "popup.html"},
+  "content_scripts": [{"matches": ["https://melsfoundtreasures.github.io/mels-found-treasures/*"], "js": ["bridge.js"], "run_at": "document_idle"}]
+}
