@@ -1,0 +1,39 @@
+/* Inventory and its item forms share the home page's palette. */
+.inventory-table-view{background:var(--panel);color:var(--text);border-color:var(--line);box-shadow:var(--shadow)}
+.inventory-table-view .panel-head{border-color:var(--line)}
+.inventory-table-view .panel-head h2 button{color:var(--text)}
+.inventory-table-view .panel-head .muted,.inventory-table-view .empty-state{color:var(--muted)}
+.inventory-table-view .toolbar input,.inventory-table-view .toolbar select,.inventory-table-view button.secondary{background:#0d1526;color:var(--text);border-color:#344259}
+.inventory-table-view .toolbar button.secondary{color:var(--text);border-color:#344259}
+#inventoryTable.inventory-table-view #inventoryList{border-color:var(--line)}
+.inventory-table-view .inventory-columns{background:var(--panel2);color:#cbd5e1;border-color:var(--line)}
+.inventory-table-view .inventory-row{background:#0d1526;border-color:var(--line)}
+.inventory-table-view .inventory-row:hover,.inventory-table-view .inventory-row:focus-within{background:var(--panel2)}
+.inventory-table-view .inventory-row .thumb{background:#172033;color:var(--muted)}
+.inventory-table-view .inventory-row .item-main h3,.inventory-table-view .inventory-row .price{color:var(--text)}
+.inventory-table-view .inventory-row .meta,.inventory-table-view .inventory-market small{color:var(--muted)}
+.inventory-table-view .inventory-market{border-color:var(--line)}
+.inventory-table-view .inventory-market small[data-listed=true]{background:#123921;color:#bbf7d0}
+.inventory-table-view .inventory-market button,.inventory-table-view .inventory-market a{color:#86efac}
+.inventory-table-view .inventory-market::before{color:#cbd5e1}
+body:has(#itemDialog[open]){background:linear-gradient(180deg,#0b1020 0,#0e1628 34%,#0b1020 100%)}
+#itemDialog{background:transparent;color:var(--text)}
+#itemDialog .item-page-sidebar{background:var(--panel);border-color:var(--line)}
+#itemDialog .item-page-sidebar nav{border-color:var(--line)}
+#itemDialog .item-page-sidebar nav a{color:#cbd5e1}
+#itemDialog .item-page-sidebar nav a:hover{background:var(--panel2)}
+#itemDialog .item-page-sidebar .primary{background:var(--accent);color:#052e16;border-color:var(--accent)}
+#itemDialog .item-page-sidebar .ghost,#itemDialog .item-page-sidebar .secondary{background:#1d293d;color:var(--text);border-color:#334155}
+#itemDialog .item-page-sidebar .danger{color:#fecaca;border-color:#7f1d1d}
+#itemDialog .eyebrow{color:var(--accent)}
+#itemDialog label,#itemDialog .marketplace-form label{color:#cbd5e1}
+#itemDialog .muted,#itemDialog small,#itemDialog .marketplace-form-note{color:var(--muted)}
+#itemDialog input,#itemDialog select,#itemDialog textarea{background:#0d1526;color:var(--text);border-color:#344259}
+#itemDialog .secondary,#itemDialog .ghost{background:#1d293d;color:var(--text);border-color:#334155}
+#itemDialog .photo-section,#itemDialog .form-grid,#itemDialog #etsyListingPanel{background:var(--panel);border-color:var(--line)}
+#itemDialog a,#itemDialog #etsyListingPanel a{color:#86efac}
+#itemDialog .marketplace-tabs{background:var(--bg);border-color:var(--line)}
+#itemDialog .marketplace-tabs button{background:#1d293d;color:var(--text);border-color:#334155}
+#itemDialog .marketplace-tabs button[aria-selected=true]{background:var(--accent);color:#052e16;border-color:var(--accent)}
+#itemDialog .marketplace-sidebar button{color:#cbd5e1}
+#itemDialog .marketplace-sidebar button[aria-pressed=true]{background:#193225;color:#bbf7d0}
